@@ -8,6 +8,13 @@ This project is in planning only. No application code should be written until th
 
 The only intended artifact at this stage is this document: `./plan/scope.md`.
 
+Repository status:
+
+- The project has been initialized as a Git repository.
+- The current branch is `main`.
+- The origin remote is `git@github.com:geozeke/qrcode.git`.
+- The repository has been pushed to origin.
+
 ## Product Goal
 
 Build a clean, elegant, self-hostable web application for generating QR codes. Users should enter content, configure visual options, preview the generated code, and download it as a file.
