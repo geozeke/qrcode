@@ -35,6 +35,8 @@ Primary deployment target:
 - Docker Compose is the main documented setup for self-hosting.
 - The Docker container should include the web server needed to serve the
   application.
+- The Docker container should include a Docker-native health monitor so
+  running containers can report healthy or unhealthy status.
 - The first release should be packaged as a single self-contained web
   app container unless a later technical constraint requires otherwise.
 - Persistent storage is not required for the first release because the
@@ -48,6 +50,23 @@ Future deployment effort:
 
 - None currently. The project scope is Docker-only unless a later
   product decision reopens non-Docker deployment.
+
+Container health monitoring:
+
+- The backend should expose a lightweight `GET /health` route for
+  container health checks.
+- The health route should return `200 OK` with a small JSON response
+  when the app process is running and able to serve HTTP requests.
+- The Docker image should define a `HEALTHCHECK` that calls the local
+  health route inside the container.
+- The Docker Compose service should include matching healthcheck
+  settings so self-hosted users can inspect status through Docker
+  Compose.
+- The health check should remain stateless and inexpensive. It should
+  not generate QR codes, process uploads, write files, or depend on a
+  database.
+- Deployment documentation should show how to inspect health status with
+  `docker compose ps`.
 
 ## Website Experience
 
@@ -418,6 +437,8 @@ Decision:
   internal application routes at first.
 - A documented public HTTP API for external automation is a future
   capability, not a first-release commitment.
+- The backend should expose an unauthenticated internal `GET /health`
+  route for Docker container health checks.
 
 Rationale:
 
@@ -498,6 +519,8 @@ Recommended test layers:
   keyboard navigation, contrast, and dark mode.
 - Docker smoke tests that build the container, start it, and verify the
   web server responds.
+- Docker health smoke tests that start the container and verify it
+  reaches healthy status.
 
 Recommended GitHub Actions pipeline:
 
@@ -518,6 +541,7 @@ Recommended quality gates:
 - Frontend linting.
 - Backend and frontend test suites.
 - Docker image builds successfully.
+- Docker container reaches healthy status after startup.
 - Basic browser flow passes before release.
 
 Testing priorities for the first stable release:
@@ -543,6 +567,8 @@ Phase 1: Planning
 Phase 2: Core MVP
 
 - Single Dockerized web app container with included web server.
+- Docker-native health monitoring through a backend health route,
+  Docker image `HEALTHCHECK`, and Docker Compose healthcheck settings.
 - Web UI.
 - Internal backend routes for website-driven QR generation and
   downloads.
@@ -595,6 +621,8 @@ Phase 5: Additional Code Formats
 - Python dependency management and tooling should use Astral `uv`.
 - The first release should be a single self-contained Docker web app
   container with an included web server.
+- The first release container should include Docker-native health
+  monitoring backed by a lightweight backend health route.
 - The first release should be stateless and should not require
   persistent storage or a persistent database.
 - The backend should expose internal HTTP routes for the website, while
