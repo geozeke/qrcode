@@ -123,6 +123,16 @@ Initial required formats:
 
 - QR Code.
 
+Initial QR Code format interpretation:
+
+- The initial QR Code format means standard square Model 2 QR Code.
+- Standard QR Code should support multiple visual module styles,
+  including square modules and dot/circle modules, as rendering options
+  rather than separate code formats.
+- Module styling must preserve required QR structure, quiet zones,
+  contrast, finder patterns, timing patterns, alignment patterns, and
+  scanner reliability.
+
 Extensibility requirement:
 
 - The project should be structured around pluggable code format
@@ -132,6 +142,8 @@ Extensibility requirement:
 
 Future barcode/code formats:
 
+- Micro QR Code.
+- rMQR Code / Rectangular Micro QR Code.
 - UPC-A.
 - Code 128.
 - EAN-13.
@@ -227,6 +239,8 @@ Planning note:
 
 Required visual options:
 
+- Selectable QR module style, initially square modules and dot/circle
+  modules.
 - Selectable foreground color.
 - Selectable background color.
 - Selectable border type.
@@ -269,6 +283,19 @@ Border planning notes:
 
 - QR codes require a quiet zone for reliable scanning, so visual border
   settings must not break scan reliability.
+
+Module style planning notes:
+
+- Square modules should be the default because they are the most
+  conservative scanner-reliability choice.
+- Dot/circle modules are a visual rendering style for standard Model 2
+  QR Code, not a separate QR format.
+- Finder patterns, timing patterns, alignment patterns, and quiet zones
+  should remain conservative even when the data modules use dots.
+- Dot/circle styles should not shrink modules enough to reduce scanner
+  reliability. The app should warn or block unsafe combinations,
+  especially when combined with low contrast, logos, or small output
+  sizes.
 
 ## Export Formats
 
@@ -502,6 +529,7 @@ Phase 2: Core MVP
 - Internal backend routes for website-driven QR generation and
   downloads.
 - QR generation for URL, geo location, and plain text.
+- QR module style selection for square modules and dot/circle modules.
 - Color selection.
 - Error correction selection with M default.
 - Border type and width options.
@@ -526,6 +554,8 @@ Phase 5: Additional Code Formats
 
 - Add barcode and additional 2D code formats through the extensible
   generator structure.
+- Consider Micro QR Code and rMQR Code / Rectangular Micro QR Code for
+  constrained physical labels or narrow print areas.
 - UPC-A is a future capability, not part of the first stable release.
 
 Phase 6: Additional Deployment Options
@@ -564,8 +594,13 @@ Phase 6: Additional Deployment Options
   release.
 - Optional dark mode for the website UI is part of the first stable
   release.
-- QR Code is the only first-release code format.
+- Standard square Model 2 QR Code is the only first-release code
+  format.
+- Square and dot/circle modules are first-release rendering styles for
+  standard QR Code, not separate code formats.
 - Barcode generation, including UPC-A, is a future capability.
+- Micro QR Code and rMQR Code / Rectangular Micro QR Code are future
+  code-format candidates, not part of the initial release.
 - URL, location, and plain text are the first QR payload types.
 - Digital business card and WiFi hotspot are planned later, after the
   core app is stable.
