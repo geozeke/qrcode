@@ -1,6 +1,6 @@
 # QR Code Generator Project Scope
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 ## Project State
 
@@ -61,9 +61,14 @@ Expected website workflow:
 3. Configure visual options.
 4. Preview generated result.
 5. Download as PNG, JPG, SVG, or PDF.
+6. Start a new code from a clear `New Code` or `Reset` control.
 
 The interface should be practical and focused on generating codes, not a
 marketing site.
+
+The website should include a clear `New Code` or `Reset` control so
+users can discard the current form state and create another QR code
+without refreshing the page.
 
 Dark mode decision:
 
@@ -82,7 +87,7 @@ Dark mode decision:
 Decision:
 
 - Backend: Python/FastAPI.
-- Frontend: TypeScript with a lightweight modern framework.
+- Frontend: SvelteKit with TypeScript.
 - Python dependency management and tooling: Astral `uv`.
 - Packaging: Docker, with Docker Compose for local/self-hosted
   deployment.
@@ -98,21 +103,17 @@ Rationale:
   ecosystem a better fit than optimizing for non-Docker distribution.
 - `uv` provides fast, reproducible Python dependency management and
   project tooling for local development, CI, and container builds.
-- TypeScript is a strong fit for a polished web UI and maintainable
-  form-heavy workflows.
+- SvelteKit with TypeScript is a strong fit for a polished web UI,
+  maintainable form-heavy workflows, preview state, and a compact app
+  structure.
+- SvelteKit should integrate cleanly into a Docker build that serves the
+  web UI alongside the FastAPI backend.
 - A FastAPI backend can expose a clear generation API and keep generation
   logic centralized.
 
-Frontend framework options to evaluate:
-
-- SvelteKit: concise, good for polished interactive tools, simple app
-  structure.
-- React with Vite: very common ecosystem, broad component/library
-  support.
-- Vue: approachable, good for form-heavy interfaces.
-
-Current decision: use a Python/FastAPI backend with a TypeScript
-frontend, managed with `uv` and deployed through Docker Compose.
+Current decision: use a Python/FastAPI backend with a SvelteKit
+TypeScript frontend, managed with `uv` and deployed through Docker
+Compose.
 
 ## Code Formats
 
@@ -312,8 +313,8 @@ Planning notes:
 - JPG is useful when users need broad compatibility with systems that do
   not accept PNG or SVG.
 - PDF is useful for print and layout workflows.
-- Need to decide whether PDF should contain only the code or support
-  page layout options such as page size, margins, and labels.
+- PDF export should support page layout options such as page size,
+  margins, and labels.
 
 ## Persistence Model
 
@@ -330,6 +331,9 @@ Stateless behavior:
 
 - Users enter data, configure the code, generate/download the result,
   and nothing is saved by the application after the request finishes.
+- Users can reset the current form state to create another QR code
+  without storing or reusing the previous payload, logo, or generated
+  file.
 - This keeps the first version simpler because it likely does not need a
   database, user accounts, stored uploads, backup strategy, or data
   cleanup jobs.
@@ -531,6 +535,8 @@ Phase 2: Core MVP
 - Border type and width options.
 - Temporary custom logo upload for QR codes.
 - Optional dark mode for the website UI.
+- `New Code` or `Reset` control for clearing the current form and
+  starting another QR code.
 - PNG, JPG, SVG, and PDF downloads.
 
 Phase 3: Stabilization
@@ -559,20 +565,18 @@ Phase 5: Additional Code Formats
 
 1. Is authentication needed, or should this be a private/self-hosted
    unauthenticated tool by default?
-2. Should PDFs be just the generated code, or should they support print
-   layouts such as page size, margins, and labels?
-3. Should the app support transparent backgrounds for PNG/SVG?
-4. Should QR previews update live while editing, or only after clicking
+2. Should the app support transparent backgrounds for PNG/SVG?
+3. Should QR previews update live while editing, or only after clicking
    a generate button?
-5. Should there be presets, such as print, web, high-contrast,
+4. Should there be presets, such as print, web, high-contrast,
    logo-safe, or label-ready?
 
 ## Current Assumptions
 
 - Docker self-hosting is required.
 - Docker Compose is the main documented setup.
-- The implementation stack is Python/FastAPI backend plus TypeScript
-  frontend.
+- The implementation stack is Python/FastAPI backend plus SvelteKit
+  TypeScript frontend.
 - Python dependency management and tooling should use Astral `uv`.
 - The first release should be a single self-contained Docker web app
   container with an included web server.

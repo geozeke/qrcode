@@ -16,7 +16,7 @@ codes.
 ## Planned Entry Points
 
 - Backend: Python/FastAPI, with internal HTTP routes for the web UI.
-- Frontend: TypeScript with a lightweight modern framework.
+- Frontend: SvelteKit with TypeScript.
 - Deployment: Docker, with Docker Compose as the main self-hosted setup.
 - Python dependency management and tooling: Astral `uv`.
 - Future source areas may include payload, format, rendering, export, API,
