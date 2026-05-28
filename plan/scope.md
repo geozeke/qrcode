@@ -70,6 +70,17 @@ The website should include a clear `New Code` or `Reset` control so
 users can discard the current form state and create another QR code
 without refreshing the page.
 
+Preview behavior decision:
+
+- QR previews should update live while users edit payload and visual
+  options.
+- Live preview updates may be debounced or throttled to avoid excessive
+  backend requests and UI churn.
+- The preview should show validation feedback instead of generating a
+  code when the current form state is incomplete or invalid.
+- The download action should use the same validated render state shown
+  in the preview.
+
 Dark mode decision:
 
 - Optional dark mode is part of the first stable release.
@@ -238,6 +249,7 @@ Required visual options:
   modules.
 - Selectable foreground color.
 - Selectable background color.
+- Optional transparent background for PNG and SVG exports.
 - Selectable border type.
 - Selectable border width.
 - User-selectable QR error correction level.
@@ -315,6 +327,12 @@ Planning notes:
 - PDF is useful for print and layout workflows.
 - PDF export should support page layout options such as page size,
   margins, and labels.
+- Transparent backgrounds should be supported for PNG and SVG as an
+  advanced export option, but opaque white should remain the default.
+- Transparent exports must preserve the QR quiet zone as transparent
+  space, and the UI should warn users to place the code on a plain,
+  high-contrast background with clear margin around the code.
+- JPG and PDF exports should use an opaque background.
 
 ## Persistence Model
 
@@ -364,7 +382,7 @@ Implementation guidance:
 
 Planning concept:
 
-- A web frontend gathers input and shows a live or near-live preview.
+- A web frontend gathers input and shows a live preview.
 - A backend generation API validates payloads and render options.
 - The first release should have API-shaped backend routes for the
   website to call, but these routes do not need to be documented or
@@ -565,10 +583,7 @@ Phase 5: Additional Code Formats
 
 1. Is authentication needed, or should this be a private/self-hosted
    unauthenticated tool by default?
-2. Should the app support transparent backgrounds for PNG/SVG?
-3. Should QR previews update live while editing, or only after clicking
-   a generate button?
-4. Should there be presets, such as print, web, high-contrast,
+2. Should there be presets, such as print, web, high-contrast,
    logo-safe, or label-ready?
 
 ## Current Assumptions
@@ -588,6 +603,8 @@ Phase 5: Additional Code Formats
   release.
 - Optional dark mode for the website UI is part of the first stable
   release.
+- QR previews should update live while users edit payload and visual
+  options.
 - Standard square Model 2 QR Code is the only first-release code
   format.
 - Square and dot/circle modules are first-release rendering styles for
@@ -601,6 +618,8 @@ Phase 5: Additional Code Formats
 - Digital business cards should use vCard format.
 - Error correction level M is the default for QR codes.
 - PNG, JPG, SVG, and PDF are required export formats.
+- Transparent backgrounds should be supported for PNG and SVG as an
+  advanced export option, with opaque white as the default.
 - Logo uploads should support PNG and JPEG/JPG, but not SVG.
 - Supported border types are quiet-zone only, solid frame, rounded
   frame, label/caption frame, and transparent padding.
