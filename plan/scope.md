@@ -46,10 +46,8 @@ Deployment options still to discuss:
 
 Future deployment effort:
 
-- Standalone installable binaries are out of initial scope and should be
-  considered after the Docker-based application is stable.
-- Future binary packaging may include Linux, macOS, and Windows, but
-  target platforms do not need to be decided yet.
+- None currently. The project scope is Docker-only unless a later
+  product decision reopens non-Docker deployment.
 
 ## Website Experience
 
@@ -83,19 +81,26 @@ Dark mode decision:
 
 Decision:
 
-- Backend: Go.
+- Backend: Python/FastAPI.
 - Frontend: TypeScript with a lightweight modern framework.
+- Python dependency management and tooling: Astral `uv`.
 - Packaging: Docker, with Docker Compose for local/self-hosted
   deployment.
 
 Rationale:
 
-- Go is a strong fit for a self-hosted utility because it builds into a
-  small standalone binary, has good Docker ergonomics, simple
-  deployment, and mature image/SVG/PDF libraries.
+- Python/FastAPI is a strong fit for a Docker-only utility because it
+  provides clear request/response modeling, validation, file upload
+  handling, and API ergonomics.
+- Python has a broad ecosystem for image processing, PDF generation,
+  validation, and barcode/QR-code related libraries.
+- Docker-only deployment makes FastAPI's development speed and library
+  ecosystem a better fit than optimizing for non-Docker distribution.
+- `uv` provides fast, reproducible Python dependency management and
+  project tooling for local development, CI, and container builds.
 - TypeScript is a strong fit for a polished web UI and maintainable
   form-heavy workflows.
-- A Go backend can expose a clear generation API and keep generation
+- A FastAPI backend can expose a clear generation API and keep generation
   logic centralized.
 
 Frontend framework options to evaluate:
@@ -106,16 +111,8 @@ Frontend framework options to evaluate:
   support.
 - Vue: approachable, good for form-heavy interfaces.
 
-Alternative stacks to consider:
-
-- Full-stack TypeScript/Node.js: simpler single-language development,
-  but standalone binary distribution is less clean than Go.
-- Python/FastAPI: productive and library-rich, but Docker-first
-  deployment would be preferred over binary distribution.
-- Rust: excellent binary story and performance, but likely slower to
-  develop.
-
-Current decision: use a Go backend with a TypeScript frontend.
+Current decision: use a Python/FastAPI backend with a TypeScript
+frontend, managed with `uv` and deployed through Docker Compose.
 
 ## Code Formats
 
@@ -160,17 +157,18 @@ Initial payload types:
 - URL.
 - Location using latitude/longitude.
 - Plain text.
+- WiFi hotspot.
 
 Recommended QR payload support for initial stable release:
 
 - URL: generate a normal URL string after validation.
 - Geo location: generate `geo:lat,long` payloads.
 - Plain text: generate raw text payloads.
+- WiFi hotspot: generate scanner-compatible WiFi network payloads.
 
 Future payload types:
 
 - Digital business card.
-- WiFi hotspot.
 - Email.
 - SMS.
 - Phone number.
@@ -212,9 +210,7 @@ Planning note:
 - Confirm whether address fields should support multiple addresses in
   the future.
 
-## WiFi Hotspot Future Scope
-
-Add after the core code generation feature is stable.
+## WiFi Hotspot Initial Scope
 
 Fields requested:
 
@@ -231,8 +227,6 @@ Encryption options requested:
 
 Planning note:
 
-- The user wrote `WAP3`; likely intended `WPA3`. Confirm before
-  implementation.
 - Need to define how hidden SSIDs should be handled.
 
 ## Visual Options
@@ -377,7 +371,7 @@ Planning concept:
 
 Possible internal modules:
 
-- `payloads`: URL, geo, plain text, future vCard, future WiFi.
+- `payloads`: URL, geo, plain text, WiFi, future vCard.
 - `formats`: QR Code, future barcode formats.
 - `rendering`: colors, borders, logos, quiet zones, dimensions.
 - `exports`: PNG, JPG, SVG, PDF.
@@ -464,15 +458,17 @@ Hosting target:
 Recommended test layers:
 
 - Backend unit tests for QR payload generation, URL validation, geo
-  validation, plain text handling, error correction options, color
-  validation, border options, logo handling, and export rendering.
+  validation, plain text handling, WiFi payload handling, error
+  correction options, color validation, border options, logo handling,
+  and export rendering.
 - Backend integration tests for HTTP routes used by the website,
   including preview and download endpoints.
 - Frontend unit/component tests for form behavior, validation states,
   option selection, dark mode, and download controls.
 - End-to-end browser tests for the main user flows: generate URL QR
-  code, generate geo QR code, generate plain text QR code, upload logo,
-  change colors, switch dark mode, and download each required format.
+  code, generate geo QR code, generate plain text QR code, generate WiFi
+  QR code, upload logo, change colors, switch dark mode, and download
+  each required format.
 - Image/export tests that verify PNG, JPG, SVG, and PDF outputs are
   generated, non-empty, and have expected dimensions/content
   characteristics.
@@ -489,13 +485,13 @@ Recommended GitHub Actions pipeline:
   end-to-end tests.
 - Release workflow: build and publish Docker images after tags or GitHub
   releases are created.
-- Dependency/security workflow: scan Go and TypeScript dependencies, run
-  static analysis where practical, and enable automated dependency
-  update PRs.
+- Dependency/security workflow: scan Python and TypeScript
+  dependencies, run static analysis where practical, and enable
+  automated dependency update PRs.
 
 Recommended quality gates:
 
-- Go formatting and vet/static checks.
+- Python formatting, linting, type checking, and FastAPI test checks.
 - TypeScript type checking.
 - Frontend linting.
 - Backend and frontend test suites.
@@ -528,7 +524,7 @@ Phase 2: Core MVP
 - Web UI.
 - Internal backend routes for website-driven QR generation and
   downloads.
-- QR generation for URL, geo location, and plain text.
+- QR generation for URL, geo location, plain text, and WiFi hotspot.
 - QR module style selection for square modules and dot/circle modules.
 - Color selection.
 - Error correction selection with M default.
@@ -548,7 +544,8 @@ Phase 3: Stabilization
 Phase 4: Advanced QR Payloads
 
 - Digital business card.
-- WiFi hotspot.
+- Additional communication payloads such as email, SMS, and phone
+  number.
 
 Phase 5: Additional Code Formats
 
@@ -557,13 +554,6 @@ Phase 5: Additional Code Formats
 - Consider Micro QR Code and rMQR Code / Rectangular Micro QR Code for
   constrained physical labels or narrow print areas.
 - UPC-A is a future capability, not part of the first stable release.
-
-Phase 6: Additional Deployment Options
-
-- Evaluate standalone installable binaries after the Docker deployment
-  is stable.
-- Decide whether to provide release binaries for Linux, macOS, Windows,
-  or a smaller initial subset.
 
 ## Key Open Questions
 
@@ -581,11 +571,11 @@ Phase 6: Additional Deployment Options
 
 - Docker self-hosting is required.
 - Docker Compose is the main documented setup.
-- The implementation stack is Go backend plus TypeScript frontend.
+- The implementation stack is Python/FastAPI backend plus TypeScript
+  frontend.
+- Python dependency management and tooling should use Astral `uv`.
 - The first release should be a single self-contained Docker web app
   container with an included web server.
-- Standalone binary installation is a future effort, not part of the
-  initial release scope.
 - The first release should be stateless and should not require
   persistent storage or a persistent database.
 - The backend should expose internal HTTP routes for the website, while
@@ -601,9 +591,9 @@ Phase 6: Additional Deployment Options
 - Barcode generation, including UPC-A, is a future capability.
 - Micro QR Code and rMQR Code / Rectangular Micro QR Code are future
   code-format candidates, not part of the initial release.
-- URL, location, and plain text are the first QR payload types.
-- Digital business card and WiFi hotspot are planned later, after the
-  core app is stable.
+- URL, location, plain text, and WiFi hotspot are the first QR payload
+  types.
+- Digital business card is planned later, after the core app is stable.
 - Digital business cards should use vCard format.
 - Error correction level M is the default for QR codes.
 - PNG, JPG, SVG, and PDF are required export formats.

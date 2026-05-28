@@ -15,17 +15,19 @@ codes.
 
 ## Planned Entry Points
 
-- Backend: Go, with internal HTTP routes for the web UI.
+- Backend: Python/FastAPI, with internal HTTP routes for the web UI.
 - Frontend: TypeScript with a lightweight modern framework.
 - Deployment: Docker, with Docker Compose as the main self-hosted setup.
+- Python dependency management and tooling: Astral `uv`.
 - Future source areas may include payload, format, rendering, export, API,
   and web modules.
 
 ## Working Constraints
 
 - Do not traverse generated dependency or build-output directories such
-  as `node_modules/`, `dist/`, `build/`, `coverage/`, or Go build/test
-  caches unless the task specifically requires it.
+  as `.venv/`, `node_modules/`, `dist/`, `build/`, `coverage/`, Python
+  caches, or `uv` cache/artifact directories unless the task
+  specifically requires it.
 - Wrap Markdown prose to 72 characters when practical, but do not break links,
   code spans, tables, or other formatting that wrapping would harm.
 - When making code changes, keep documentation and metadata consistent. This

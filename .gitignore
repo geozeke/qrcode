@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Python environments and local tooling caches
+.venv/
+venv/
+env/
+.uv-cache/
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+
+# Docker and runtime artifacts
+docker-compose.override.yml
+compose.override.yml
+*.log
+logs/
+tmp/
+temp/
+
+# Editors and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
