@@ -51,6 +51,17 @@ Future deployment effort:
 - None currently. The project scope is Docker-only unless a later
   product decision reopens non-Docker deployment.
 
+Access model:
+
+- The first release should be a private, open self-hosted utility.
+- The app should not include built-in authentication, local users,
+  passwords, login sessions, or account management in the first release.
+- Anyone who can reach the deployed web app can use it, so deployers
+  should restrict access with private networking, firewall rules, VPNs,
+  or reverse proxy controls when needed.
+- Reverse proxy authentication is a future deployment capability, not a
+  first-release requirement.
+
 Container health monitoring:
 
 - The backend should expose a lightweight `GET /health` route for
@@ -397,6 +408,37 @@ Implementation guidance:
 - Design the request and generation model so persistence can be added
   later without rewriting the generator internals.
 
+## Authentication Direction
+
+Decision:
+
+- The first release should be open and unauthenticated inside the
+  application.
+- The app is intended for private self-hosted deployment where network
+  access controls decide who can reach it.
+- Built-in authentication is out of scope for the first stable release.
+
+Rationale:
+
+- Keeping authentication out of the first release preserves the
+  stateless deployment model.
+- Avoiding local users and app-managed sessions keeps the initial app
+  focused on QR code generation.
+- Many self-hosted deployments already centralize authentication at the
+  reverse proxy or private network layer.
+
+Future reverse proxy authentication capability:
+
+- Document deployments where HAProxy, Caddy, Traefik, nginx, or another
+  reverse proxy enforces authentication before requests reach the app.
+- Authelia with HAProxy is a likely future example for SSO, MFA, and
+  policy-based access control.
+- Authentik, oauth2-proxy, mTLS, VPN-only access, and trusted identity
+  headers are also possible future deployment patterns.
+- If trusted identity headers are ever supported by the app, they must
+  be disabled by default and only trusted when the deployer explicitly
+  enables them behind a trusted proxy.
+
 ## Suggested Architecture
 
 Planning concept:
@@ -437,6 +479,8 @@ Decision:
   internal application routes at first.
 - A documented public HTTP API for external automation is a future
   capability, not a first-release commitment.
+- First-release HTTP routes should not require app-level
+  authentication.
 - The backend should expose an unauthenticated internal `GET /health`
   route for Docker container health checks.
 
@@ -444,9 +488,9 @@ Rationale:
 
 - The website will need a generation interface anyway, so the backend
   should use clear request and response structures from the start.
-- Deferring public API support avoids extra first-release work around
-  versioning, formal documentation, authentication behavior, rate
-  limits, and long-term compatibility.
+- Deferring public API support and built-in authentication avoids extra
+  first-release work around versioning, formal documentation,
+  authentication behavior, rate limits, and long-term compatibility.
 - This keeps the project extensible for future scripts, integrations,
   and batch generation.
 
@@ -607,9 +651,7 @@ Phase 5: Additional Code Formats
 
 ## Key Open Questions
 
-1. Is authentication needed, or should this be a private/self-hosted
-   unauthenticated tool by default?
-2. Should there be presets, such as print, web, high-contrast,
+1. Should there be presets, such as print, web, high-contrast,
    logo-safe, or label-ready?
 
 ## Current Assumptions
@@ -625,6 +667,11 @@ Phase 5: Additional Code Formats
   monitoring backed by a lightweight backend health route.
 - The first release should be stateless and should not require
   persistent storage or a persistent database.
+- The first release should be open and unauthenticated inside the app,
+  intended for private self-hosted access.
+- Authelia and other reverse proxy authentication integrations are
+  potential future deployment capabilities, not first-release
+  requirements.
 - The backend should expose internal HTTP routes for the website, while
   a documented external automation API is a future capability.
 - Temporary custom logo upload for QR codes is part of the first stable
