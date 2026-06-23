@@ -1,6 +1,6 @@
 # QR Code Generator Project Scope
 
-Last updated: 2026-05-28
+Last updated: 2026-06-23
 
 ## Project State
 
@@ -155,6 +155,39 @@ Rationale:
 Current decision: use a Python/FastAPI backend with a SvelteKit
 TypeScript frontend, managed with `uv` and deployed through Docker
 Compose.
+
+## Local Container Development
+
+Decision:
+
+- On supported Macs, use Apple's
+  [`container`](https://github.com/apple/container) as the preferred
+  local runtime for developing, testing, and debugging the application
+  image.
+- Build the project `Dockerfile` with `container build` and run the
+  resulting OCI image with `container run` so container-specific issues
+  can be reproduced in Linux before deployment.
+- Use a persistent container machine when an interactive Linux
+  environment is useful for diagnosing build steps, native dependencies,
+  filesystem behavior, or process startup.
+- Keep the `Dockerfile` and OCI image portable. It must also build
+  and run with standard Docker tooling; Apple `container` is a local
+  development tool, not a production dependency.
+- Continue using Docker Compose as the documented self-hosted deployment
+  interface. Local `container` testing supplements but does not replace
+  Docker Compose validation in CI or before release.
+
+Development environment constraints:
+
+- Apple's `container` requires Apple silicon and a supported macOS
+  release. Contributors on other platforms may use Docker or another
+  OCI-compatible runtime.
+- Document the tested `container` version and exact build/run/debug
+  commands when application development begins, because CLI behavior may
+  vary between releases.
+- Validate the production image's health check, runtime user, network
+  binding, exported files, and graceful shutdown in the Linux container,
+  not only through host-native development servers.
 
 ## Code Formats
 
@@ -565,6 +598,8 @@ Recommended test layers:
   web server responds.
 - Docker health smoke tests that start the container and verify it
   reaches healthy status.
+- Local macOS image checks with Apple `container` during development to
+  reproduce and debug Dockerfile and Linux runtime behavior.
 
 Recommended GitHub Actions pipeline:
 
@@ -597,6 +632,8 @@ Testing priorities for the first stable release:
 - Color and border choices should not silently create unusable codes
   without warning.
 - Docker Compose should start the app consistently.
+- The same OCI image should behave consistently under Apple `container`
+  during local development and Docker in CI and deployment.
 
 ## Phased Scope
 
@@ -661,6 +698,9 @@ Phase 5: Additional Code Formats
 - The implementation stack is Python/FastAPI backend plus SvelteKit
   TypeScript frontend.
 - Python dependency management and tooling should use Astral `uv`.
+- On supported Macs, Apple's `container` tool is the preferred local
+  environment for building, running, testing, and debugging the image
+  on Linux before deployment.
 - The first release should be a single self-contained Docker web app
   container with an included web server.
 - The first release container should include Docker-native health
