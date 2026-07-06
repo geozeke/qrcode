@@ -1,6 +1,6 @@
 # QR Code Generator Project Scope
 
-Last updated: 2026-06-23
+Last updated: 2026-07-06
 
 ## Project State
 
@@ -156,38 +156,30 @@ Current decision: use a Python/FastAPI backend with a SvelteKit
 TypeScript frontend, managed with `uv` and deployed through Docker
 Compose.
 
-## Local Container Development
+## Local Development And Compose Validation
 
 Decision:
 
-- On supported Macs, use Apple's
-  [`container`](https://github.com/apple/container) as the preferred
-  local runtime for developing, testing, and debugging the application
-  image.
-- Build the project `Dockerfile` with `container build` and run the
-  resulting OCI image with `container run` so container-specific issues
-  can be reproduced in Linux before deployment.
-- Use a persistent container machine when an interactive Linux
-  environment is useful for diagnosing build steps, native dependencies,
-  filesystem behavior, or process startup.
-- Keep the `Dockerfile` and OCI image portable. It must also build
-  and run with standard Docker tooling; Apple `container` is a local
-  development tool, not a production dependency.
-- Continue using Docker Compose as the documented self-hosted deployment
-  interface. Local `container` testing supplements but does not replace
-  Docker Compose validation in CI or before release.
+- Use host-native development on the Apple host for the normal edit,
+  debug, and test loop.
+- Run the FastAPI backend and SvelteKit frontend development servers
+  directly on the host so hot reload, IDE debugging, and unit tests stay
+  fast and simple.
+- Use an Ubuntu VM with Docker Engine and the Docker Compose plugin as
+  the preferred local environment for Compose validation.
+- Clone the repository in the Ubuntu VM, pull the branch being tested,
+  and run `docker compose up --build` from the VM checkout.
+- Keep Docker Compose as the documented self-hosted deployment
+  interface. The Ubuntu VM validation workflow should match that
+  documented deployment path.
 
-Development environment constraints:
+Validation targets:
 
-- Apple's `container` requires Apple silicon and a supported macOS
-  release. Contributors on other platforms may use Docker or another
-  OCI-compatible runtime.
-- Document the tested `container` version and exact build/run/debug
-  commands when application development begins, because CLI behavior may
-  vary between releases.
 - Validate the production image's health check, runtime user, network
-  binding, exported files, and graceful shutdown in the Linux container,
-  not only through host-native development servers.
+  binding, packaged frontend assets, port mapping, and graceful shutdown
+  through Docker Compose in the Ubuntu VM.
+- Keep the `Dockerfile` and Compose configuration portable so they also
+  work in CI and other standard Docker Engine environments.
 
 ## Code Formats
 
@@ -598,8 +590,8 @@ Recommended test layers:
   web server responds.
 - Docker health smoke tests that start the container and verify it
   reaches healthy status.
-- Local macOS image checks with Apple `container` during development to
-  reproduce and debug Dockerfile and Linux runtime behavior.
+- Local Ubuntu VM Compose checks during development to reproduce and
+  debug Dockerfile, health check, and Linux runtime behavior.
 
 Recommended GitHub Actions pipeline:
 
@@ -632,8 +624,8 @@ Testing priorities for the first stable release:
 - Color and border choices should not silently create unusable codes
   without warning.
 - Docker Compose should start the app consistently.
-- The same OCI image should behave consistently under Apple `container`
-  during local development and Docker in CI and deployment.
+- The same OCI image should behave consistently in the local Ubuntu VM,
+  CI, and deployment.
 
 ## Phased Scope
 
@@ -698,9 +690,9 @@ Phase 5: Additional Code Formats
 - The implementation stack is Python/FastAPI backend plus SvelteKit
   TypeScript frontend.
 - Python dependency management and tooling should use Astral `uv`.
-- On supported Macs, Apple's `container` tool is the preferred local
-  environment for building, running, testing, and debugging the image
-  on Linux before deployment.
+- Host-native development is the preferred day-to-day workflow.
+- An Ubuntu VM with Docker Engine and the Docker Compose plugin is the
+  preferred local environment for Compose validation.
 - The first release should be a single self-contained Docker web app
   container with an included web server.
 - The first release container should include Docker-native health
