@@ -250,6 +250,52 @@ Planning note:
 - Decide later whether to use vCard 3.0 or vCard 4.0 based on scanner
   compatibility and implementation details.
 
+## Map-Assisted Location QR Future Scope
+
+Add after the first release is stable.
+
+Future capability:
+
+- Add an interactive map to help users choose coordinates for location
+  QR codes.
+- Users should be able to pan and zoom the map, click or tap a point,
+  and have the latitude and longitude fields update from that point.
+- Manual latitude and longitude entry should remain supported. When
+  users enter valid coordinates manually, the map should zoom to that
+  point and show or move a pin.
+- The generated QR payload should remain `geo:lat,long`.
+
+Initial rollout approach:
+
+- Implement one mapping provider integration at a time.
+- Start with map click/manual coordinate synchronization before adding
+  search, geocoding, autocomplete, or reverse geocoding.
+- Do not build a broad multi-provider abstraction until at least one
+  provider integration is working and shared requirements are clear.
+
+Free/open mapping options to evaluate:
+
+- Leaflet with compatible tile providers.
+- MapLibre GL JS with compatible vector or raster tile providers.
+- OpenLayers with compatible tile providers.
+
+Provider-account mapping options to evaluate:
+
+- Google Maps Platform.
+- Mapbox.
+- TomTom.
+
+Planning notes:
+
+- Provider credentials should be supplied by the deployer when required.
+- Provider pricing, attribution, usage limits, and privacy behavior must
+  be reviewed before implementing a provider integration.
+- Storing provider credentials in the application is out of scope unless
+  a later design defines secure configuration and deployment behavior.
+- Search, geocoding, autocomplete, and reverse geocoding are separate
+  future decisions because they add provider-specific policy, billing,
+  and privacy concerns.
+
 ## Digital Business Card Future Scope
 
 Add after the core code generation feature is stable.
@@ -567,6 +613,12 @@ Hosting target:
 - GitHub Actions is the recommended CI system unless a later requirement
   points elsewhere.
 
+Documentation target:
+
+- Initial project documentation should live in `README.md`.
+- If map-assisted location QR code selection is implemented, move to a
+  proper documentation site published with GitLab Pages.
+
 Recommended test layers:
 
 - Backend unit tests for QR payload generation, URL validation, geo
@@ -721,6 +773,10 @@ Phase 5: Additional Code Formats
   code-format candidates, not part of the initial release.
 - URL, location, plain text, and WiFi hotspot are the first QR payload
   types.
+- Map-assisted location QR code selection is a future capability, not a
+  first-release requirement.
+- Future map-assisted location support should implement one mapping
+  provider integration at a time.
 - Digital business card is planned later, after the core app is stable.
 - Digital business cards should use vCard format.
 - Error correction level M is the default for QR codes.
@@ -731,5 +787,8 @@ Phase 5: Additional Code Formats
 - Supported border types are quiet-zone only, solid frame, rounded
   frame, label/caption frame, and transparent padding.
 - GitHub Actions is the recommended CI system.
+- Initial documentation should live in `README.md`.
+- A GitLab Pages documentation site is a future option if map-assisted
+  location QR code selection is implemented.
 - The project should prioritize scan reliability over visual
   customization when those goals conflict.
