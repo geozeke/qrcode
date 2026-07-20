@@ -1,6 +1,7 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 project_name := "qrcode"
 
+# Show the available project recipes
 default: help
 
 # Require initial setup to be complete
@@ -11,6 +12,7 @@ _require_setup:
         exit 1
     fi
 
+# List available recipes and their descriptions
 help:
     @just --list
 
@@ -68,60 +70,77 @@ setup:
     touch .init/setup
     echo "Setup complete. Run 'just test' to execute the host test suite."
 
+# Synchronize installed dependencies with both lockfiles
 sync: _require_setup
     uv sync --frozen --all-groups
     npm --prefix frontend ci --no-fund
 
+# Check Python and frontend linting and Python formatting
 lint:
     uv run ruff check .
     uv run ruff format --check .
     npm --prefix frontend run lint
 
+# Run Python and frontend static type checks
 typecheck:
     uv run mypy src
     npm --prefix frontend run check
 
+# Run the host backend and frontend test suites
 test: _require_setup
     uv run pytest --tb=short
     npm --prefix frontend run test -- --run
 
+# Run the Playwright end-to-end browser tests
 test-e2e:
     npm --prefix frontend run test:e2e
 
+# Validate direct dependency licenses against project policy
 licenses:
     uv run python scripts/check_dependency_licenses.py
 
+# Serve the Zensical documentation site locally
 docs-serve:
     uv run --group docs zensical serve
 
+# Build the Zensical documentation site in strict mode
 docs-build:
     uv run --group docs zensical build --clean --strict
 
+# Build the local production container image
 image:
     docker build --tag qrcode:local .
 
+# Test the application through its Docker Compose deployment
 compose-smoke:
     docker build --tag qrcode:local .
     QR_IMAGE=qrcode:local bash scripts/compose_smoke.sh
 
+# Test the reverse-proxy Docker Compose deployment
 proxy-smoke:
     docker build --tag qrcode:local .
     QR_IMAGE=qrcode:local bash scripts/proxy_smoke.sh
 
+# Run all on-host Docker deployment tests
 deployment-test:
     bash scripts/deployment_test.sh
 
+# Run the complete host quality-check suite
 check: lint typecheck test docs-build licenses
 
+# Report outdated direct Python and frontend dependencies
 outdated:
     uv tree --outdated --depth=1 --all-groups
     npm --prefix frontend outdated
 
+# Update dependency constraints and lockfiles
 upgrade:
     bash scripts/upgrade_dependencies.sh
 
+# Update project files to the specified release version
 bump version:
     bash scripts/bump_version.sh {{ version }}
 
+# Create and push the current version's release tag
 tag-release:
     bash scripts/release_tags.sh
