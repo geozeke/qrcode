@@ -115,11 +115,10 @@ changelog:
 
 # Report outdated direct Python and frontend dependencies
 outdated:
-    uv tree --outdated --depth=1 --all-groups
-    npm --prefix frontend outdated
+    bash scripts/outdated_dependencies.sh
 
-# Update dependency constraints and lockfiles
-upgrade:
+# Update compatible direct dependencies and create a local commit
+upgrade: _require_setup
     bash scripts/upgrade_dependencies.sh
 
 # Update project files to the specified release version
