@@ -24,9 +24,11 @@ just setup
 ```
 
 Setup verifies Git, Node.js, npm, and `uv`, installs every locked Python
-dependency group, installs the locked frontend dependencies, and records
-successful initialization in `.init/setup`. It is safe to rerun; use the
-following commands when a completely fresh environment is needed:
+dependency group, installs the locked frontend dependencies, ensures the
+Playwright Chromium browser is available for end-to-end tests, and
+records successful initialization in `.init/setup`. It is safe to rerun;
+an existing setup rechecks the browser installation. Use the following
+commands when a completely fresh environment is needed:
 
 ```console
 just reset
@@ -63,7 +65,8 @@ just test-e2e
 and frontend unit/integration tests. `just check` adds formatting,
 linting, type checking, a strict documentation build, and dependency
 license validation. Browser and Docker deployment suites remain separate
-because they require additional host services or browser binaries.
+because they require additional host services or installed browser
+binaries.
 
 Run the complete on-host deployment gate with:
 
