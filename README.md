@@ -1,9 +1,9 @@
 # QR Code Generator
 
 <img
-  src="docs/assets/dinobox-logo.png"
-  alt="Dinobox logo"
-  width="120"
+  src="docs/assets/qr-logo.png"
+  alt="QR code encoding message"
+  width="180"
 />
 
 A private, stateless, self-hostable web application for creating
