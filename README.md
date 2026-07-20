@@ -7,6 +7,11 @@ The project is under active development. User, deployment, and
 contributor documentation lives in [`docs/`](docs/index.md) and is
 published at <https://geozeke.github.io/qrcode/>.
 
+Release images use the Docker Hub reference
+`docker.io/<maintainer-namespace>/qrcode:<version>`, with the namespace
+configured by the project maintainer. See the
+[deployment guide](docs/deployment.md) for registry setup.
+
 ## Quick start
 
 Copy `.env.example` to `.env`, replace the example render-token secret,

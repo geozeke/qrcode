@@ -1,0 +1,51 @@
+services:
+  qrcode:
+    ports: !reset []
+    expose:
+      - "8080"
+    networks:
+      - proxy
+
+  proxy:
+    image: nginx:1.29-alpine
+    depends_on:
+      qrcode:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8080"
+    networks:
+      - proxy
+      - public
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+      - /var/cache/nginx:size=16m,mode=0755
+      - /var/run:size=1m,mode=0755
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:8080/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  proxy:
+    internal: true
+  public:

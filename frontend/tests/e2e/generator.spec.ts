@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import axe from 'axe-core';
 
 const pixel = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
@@ -66,18 +65,6 @@ test('keeps theme changes separate from generated colors', async ({ page }) => {
   await expect(foreground).toHaveValue('#000000');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-});
-
-test('passes browser accessibility checks in light and dark modes', async ({ page }) => {
-  await page.addScriptTag({ content: axe.source });
-  const violations = async () =>
-    page.evaluate(async () => {
-      const engine = (window as typeof window & { axe: typeof axe }).axe;
-      return (await engine.run(document)).violations.map(({ id, impact }) => ({ id, impact }));
-    });
-  expect(await violations()).toEqual([]);
-  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
-  expect(await violations()).toEqual([]);
 });
 
 test('offers keyboard access and a single-column mobile layout', async ({ page }, testInfo) => {

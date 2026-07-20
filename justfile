@@ -29,6 +29,9 @@ test:
 test-e2e:
     npm --prefix frontend run test:e2e
 
+licenses:
+    uv run python scripts/check_dependency_licenses.py
+
 docs-serve:
     uv run --group docs zensical serve
 
@@ -39,10 +42,14 @@ image:
     docker build --tag qrcode:local .
 
 compose-smoke:
-    docker compose up --build --wait
-    docker compose down
+    docker build --tag qrcode:local .
+    QR_IMAGE=qrcode:local bash scripts/compose_smoke.sh
 
-check: lint typecheck test docs-build
+proxy-smoke:
+    docker build --tag qrcode:local .
+    QR_IMAGE=qrcode:local bash scripts/proxy_smoke.sh
+
+check: lint typecheck test docs-build licenses
 
 outdated:
     uv tree --outdated --depth=1 --all-groups

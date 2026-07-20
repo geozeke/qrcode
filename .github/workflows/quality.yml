@@ -1,0 +1,89 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Application quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.29"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: extractions/setup-just@v3
+      - name: Install locked dependencies
+        run: |
+          uv sync --locked --all-groups
+          npm --prefix frontend ci
+      - name: Run local-equivalent checks
+        run: just check
+      - name: Build frontend production assets
+        run: npm --prefix frontend run build
+
+  browser:
+    name: Browser tests
+    if: github.event_name != 'pull_request'
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm --prefix frontend ci
+      - name: Install Chromium
+        run: npm --prefix frontend exec -- playwright install --with-deps chromium
+      - run: npm --prefix frontend run test:e2e
+
+  container:
+    name: Production container
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build production image
+        run: |
+          docker build \
+            --build-arg VERSION=ci \
+            --build-arg REVISION="$GITHUB_SHA" \
+            --build-arg CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tag qrcode:ci .
+      - name: Scan production image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: qrcode:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL
+      - name: Smoke test application container
+        if: github.event_name != 'pull_request'
+        env:
+          QR_IMAGE: qrcode:ci
+        run: bash scripts/compose_smoke.sh
+      - name: Smoke test proxy deployment
+        if: github.event_name != 'pull_request'
+        env:
+          QR_IMAGE: qrcode:ci
+        run: bash scripts/proxy_smoke.sh

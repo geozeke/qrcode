@@ -15,6 +15,7 @@ nav = [
   { "User guide" = "user-guide.md" },
   { "Deployment" = "deployment.md" },
   { "Development" = "development.md" },
+  { "Dependency licenses" = "dependency-licenses.md" },
 ]
 
 [project.theme]

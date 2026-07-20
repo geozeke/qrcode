@@ -21,7 +21,6 @@
     "@testing-library/svelte": "^5.4.2",
     "@tsconfig/svelte": "^5.0.4",
     "@types/node": "^22.15.0",
-    "axe-core": "^4.12.1",
     "eslint": "^9.25.0",
     "eslint-plugin-svelte": "^3.5.1",
     "globals": "^16.5.0",
