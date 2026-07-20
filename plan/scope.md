@@ -228,10 +228,17 @@ Initial payload types:
 
 Recommended QR payload support for initial stable release:
 
-- URL: generate a normal URL string after validation.
-- Geo location: generate `geo:lat,long` payloads.
-- Plain text: generate raw text payloads.
-- WiFi hotspot: generate scanner-compatible WiFi network payloads.
+- URL: trim surrounding whitespace. If no URI scheme is present, prepend
+  `https://`; otherwise accept only a valid `http` or `https` URL with a
+  non-empty host. Encode the resulting URL unchanged after validation.
+- Geo location: accept decimal WGS-84 latitude and longitude with up to
+  six fractional digits, canonicalize negative zero to zero, and
+  generate `geo:latitude,longitude` payloads without altitude,
+  uncertainty, or CRS parameters.
+- Plain text: generate raw UTF-8 text payloads without trimming or other
+  normalization.
+- WiFi hotspot: generate scanner-compatible WiFi network payloads using
+  the `WIFI:` format and its required escaping rules.
 
 Future payload types:
 
@@ -330,17 +337,28 @@ Fields requested:
 - Network name.
 - Password.
 - Encryption.
+- Hidden network.
 
 Encryption options requested:
 
 - None.
-- WPA/WPA2.
-- WPA3.
-- WEP.
+- WPA/WPA2/WPA3 Personal.
+- WEP (legacy).
 
-Planning note:
+WiFi encoding rules:
 
-- Need to define how hidden SSIDs should be handled.
+- Support Open, WPA/WPA2/WPA3 Personal, and legacy WEP networks only.
+  Enterprise WiFi is out of scope for the first release.
+- Serialize WPA, WPA2, and WPA3 Personal networks as `T:WPA`, Open
+  networks as `T:nopass`, and WEP networks as `T:WEP`.
+- The hidden-network control defaults to off. Include `H:true` only when
+  it is selected.
+- Serialize fields in the order `WIFI:T:{type};S:{ssid};P:{password};`
+  followed by `H:true;` when applicable, and terminate the payload with
+  `;`. Omit the password field for Open networks.
+- Escape backslash, semicolon, comma, double quote, and colon in SSID
+  and password values by prefixing each with a backslash. Do not
+  percent-encode these values.
 
 ## Visual Options
 
@@ -606,22 +624,41 @@ Rationale:
 
 URL:
 
-- Require a valid scheme such as `http` or `https`.
-- Decide whether to auto-prefix `https://` when omitted.
+- Trim surrounding whitespace.
+- If the input has no URI scheme, prepend `https://`.
+- Accept only valid `http` or `https` URLs with a non-empty host.
+- Reject malformed URLs, embedded whitespace or control characters, and
+  all other schemes. Do not test whether a URL is reachable.
 
 Location:
 
 - Latitude must be between -90 and 90.
 - Longitude must be between -180 and 180.
-- Decide display precision and validation behavior.
+- Accept decimal values with up to six fractional digits. Reject
+  exponent notation and locale-specific comma notation.
+- Canonicalize negative zero to zero and encode
+  `geo:latitude,longitude`, with no altitude, uncertainty, or CRS
+  parameter.
 
 Plain text:
 
-- Decide max length for UI and generation.
+- Require from 1 through 1,000 UTF-8 bytes.
+- Preserve all text exactly, including leading/trailing whitespace and
+  line breaks, and encode it as UTF-8 byte data with ECI assignment 26.
 - Show a warning when text length creates a dense or hard-to-scan QR
   code.
 - Reject content that requires a QR Code version greater than 20, and
   warn when it requires version 11 through 20.
+
+WiFi:
+
+- Require an SSID of 1 through 32 UTF-8 bytes and reject control
+  characters.
+- For WPA, accept an 8 through 63 character printable-ASCII passphrase.
+- For WEP, accept 5 or 13 printable-ASCII characters, or 10 or 26
+  hexadecimal characters.
+- Open networks require an empty password. Do not support 64-character
+  raw WPA pre-shared keys in the first release.
 
 Future UPC-A:
 
@@ -668,6 +705,9 @@ Recommended test layers:
   validation, plain text handling, WiFi payload handling, error
   correction options, color validation, border options, logo handling,
   and export rendering.
+- Payload tests for scheme insertion and rejection, exact `geo:` output,
+  UTF-8 text preservation and byte limits, and Open, WPA, WEP, hidden,
+  and escaped-character WiFi payloads.
 - Backend integration tests for HTTP routes used by the website,
   including preview and download endpoints.
 - Frontend unit/component tests for form behavior, validation states,
