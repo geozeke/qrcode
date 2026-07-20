@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App.svelte';
 
 function previewResponse(): Response {
-  return new Response(new Blob(['png'], { type: 'image/png' }), {
+  return new Response(new TextEncoder().encode('png'), {
     status: 200,
     headers: { 'Content-Type': 'image/png', 'X-Render-Token': 'safe-token' },
   });
