@@ -32,7 +32,7 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
       - name: Set up locked development environments
         run: just setup
       - name: Validate pull request title
@@ -78,7 +78,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
       - name: Test production deployment on host Docker Engine
         env:
           QR_IMAGE: qrcode:ci
