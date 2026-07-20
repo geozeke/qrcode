@@ -305,7 +305,13 @@ def test_release_commit_validation_rejects_nonconventional_subject(
     """Release preparation rejects direct non-Conventional commits."""
 
     def fake_run(*args: str, capture: bool = False) -> str:
-        assert args[:2] == ("git", "log")
+        assert args == (
+            "git",
+            "log",
+            "v0.1.0..HEAD",
+            "--no-merges",
+            "--format=%s",
+        )
         assert capture
         return "feat: valid change\nPlain-language commit\n"
 
