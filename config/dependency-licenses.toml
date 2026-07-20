@@ -1,7 +1,7 @@
 [python]
 anyio = "MIT"
 fastapi = "MIT"
-httpx = "BSD-3-Clause"
+httpx2 = "BSD-3-Clause"
 mypy = "MIT"
 pillow = "MIT-CMU"
 pip-audit = "Apache-2.0"

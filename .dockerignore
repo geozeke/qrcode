@@ -1,5 +1,6 @@
 .git
 .github
+.init
 .venv
 .uv-cache
 node_modules

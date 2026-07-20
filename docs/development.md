@@ -4,7 +4,7 @@
 
 - Python 3.12
 - [uv](https://docs.astral.sh/uv/)
-- Node.js 22 with npm
+- Node.js 22.13 or newer with npm (Node.js 23 is not supported)
 - `just`
 - Docker Engine
 - A current Docker Compose release, available as either `docker compose`
@@ -23,6 +23,21 @@ docker compose version  # or: docker-compose version
 just setup
 ```
 
+Setup verifies Git, Node.js, npm, and `uv`, installs every locked Python
+dependency group, installs the locked frontend dependencies, and records
+successful initialization in `.init/setup`. It is safe to rerun; use the
+following commands when a completely fresh environment is needed:
+
+```console
+just reset
+just setup
+```
+
+`just clean` removes generated caches (including the uv cache), reports,
+and build outputs while preserving installed environments. `just reset`
+additionally removes `.venv`, frontend `node_modules`, and the setup
+marker.
+
 Run the backend and frontend development servers in separate terminals:
 
 ```console
@@ -40,9 +55,16 @@ backend on port 8080.
 ## Quality checks
 
 ```console
+just test
 just check
 just test-e2e
 ```
+
+`just test` is the normal pre-commit host test suite and runs the backend
+and frontend unit/integration tests. `just check` adds formatting,
+linting, type checking, a strict documentation build, and dependency
+license validation. Browser and Docker deployment suites remain separate
+because they require additional host services or browser binaries.
 
 Run the complete on-host deployment gate with:
 
