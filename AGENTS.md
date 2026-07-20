@@ -28,6 +28,8 @@ codes.
   as `.venv/`, `node_modules/`, `dist/`, `build/`, `coverage/`, Python
   caches, or `uv` cache/artifact directories unless the task
   specifically requires it.
+- Use `rg` for searches. Start repository exploration with `README.md`,
+  `plan/scope.md`, and relevant source directories once they exist.
 - Wrap Markdown prose to 72 characters when practical, but do not break links,
   code spans, tables, or other formatting that wrapping would harm.
 - When making code changes, keep documentation and metadata consistent. This
@@ -35,3 +37,12 @@ codes.
   similar project text.
 - Preserve scanner reliability over visual customization when those goals
   conflict.
+- For Python code, prefer `pathlib.Path` objects over raw path strings
+  where practical, use semantically equivalent truthiness checks, and use
+  snake_case names.
+- Use strict NumPy-style docstrings for Python modules, classes, and
+  functions.
+- Run Ruff through `uv` for Python code changes when project tooling is
+  available.
+- When reviewing or changing `.gitignore`, also inspect Git's configured
+  global excludes and account for them in recommendations.
