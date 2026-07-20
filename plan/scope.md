@@ -1083,7 +1083,8 @@ Recommended GitHub Actions pipeline:
 - Fail closed: do not create a release or publish an image when a
   required test, build, or health check fails.
 - Dependency/security workflow: run weekly and when dependency files
-  change; scan Python and TypeScript dependencies, check the adopted
+  change; limit Dependabot updates to direct dependencies, scan the full
+  Python and TypeScript dependency graphs, check the adopted
   license policy, run useful static analysis, and enable Dependabot for
   Python, npm, and GitHub Actions updates.
 

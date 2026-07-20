@@ -201,8 +201,10 @@ release candidate before publishing images.
 
 A weekly security workflow runs Python and npm dependency audits,
 CodeQL analysis, repository scanning, and the license inventory check.
-Dependabot monitors uv, npm, Docker, Docker Compose, and GitHub Actions
-dependencies.
+Dependabot proposes updates only for direct dependencies declared in
+the uv, npm, Docker, Docker Compose, and GitHub Actions manifests. The
+security audits continue to scan the complete resolved dependency
+graph, including transitive dependencies.
 
 Release tags publish multi-architecture `linux/amd64` and `linux/arm64`
 images to Docker Hub and publish matching GitHub Releases. The

@@ -4,6 +4,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     groups:
       python-dependencies:
         patterns: ["*"]
@@ -15,6 +17,8 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     groups:
       frontend-dependencies:
         patterns: ["*"]
@@ -26,6 +30,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     commit-message:
       prefix: build
       include: scope
@@ -34,6 +40,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     commit-message:
       prefix: build
       include: scope
@@ -42,6 +50,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     commit-message:
       prefix: build
       include: scope
