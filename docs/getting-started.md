@@ -54,9 +54,12 @@ Make the following minimal changes before starting the service.
 ### Select the image
 
 Replace `<maintainer-namespace>` with the Docker Hub namespace shown for
-the published image. Stable releases provide exact semantic version tags
-and `latest`; prereleases provide only exact version tags. Use an exact
-version instead of `latest` when deployments must be reproducible.
+the published image. Stable releases provide exact semantic version
+tags, a mutable major/minor tag, and `latest`. Releases at `1.0.0` and
+later also provide a mutable major tag; major-zero releases omit the
+incompatible `0` tag. Prereleases provide only exact version tags. Use
+an exact version instead of a floating tag when deployments must be
+reproducible.
 
 ### Set the render-token secret
 

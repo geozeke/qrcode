@@ -995,10 +995,14 @@ Maintainer workflow and releases:
   tree, `main` matching `origin/main`, and a tag that does not already
   exist.
 - Prerelease tags publish only their exact version. Stable releases also
-  update the mutable `latest` image tag.
+  update mutable major/minor and `latest` image tags. Publish a mutable
+  major tag beginning with `1.0.0`, but omit the incompatible `0` tag
+  during initial development.
 - Initially publish release images to a configurable Docker Hub
   repository, `docker.io/<maintainer-namespace>/qrcode`. Do not hard-code
   a personal Docker Hub namespace in scripts or workflows.
+- Synchronize the Docker Hub Repository Overview and short description
+  from the root `README.md` whenever it changes on `main`.
 - Do not publish an `edge` image for ordinary pushes to `main` in the
   first release process.
 - When GHCR is introduced, dual-publish identical immutable version tags
