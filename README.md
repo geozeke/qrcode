@@ -46,7 +46,8 @@ just docs-serve
 ```
 
 See the [development guide](docs/development.md) for the complete local
-workflow.
+workflow. Release history is recorded in the
+[changelog](CHANGELOG.md).
 
 ## License
 

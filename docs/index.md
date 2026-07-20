@@ -36,3 +36,5 @@ appropriate.
 - [Create and export QR codes](user-guide.md)
 - [Deploy behind a reverse proxy](deployment.md)
 - [Set up a development environment](development.md)
+- [Read the active changelog](https://github.com/geozeke/qrcode/blob/main/CHANGELOG.md)
+- [Browse archived changelogs](https://github.com/geozeke/qrcode/tree/main/changelogs)

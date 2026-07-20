@@ -7,6 +7,9 @@ updates:
     groups:
       python-dependencies:
         patterns: ["*"]
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: npm
     directory: /frontend
@@ -15,18 +18,30 @@ updates:
     groups:
       frontend-dependencies:
         patterns: ["*"]
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: build
+      include: scope

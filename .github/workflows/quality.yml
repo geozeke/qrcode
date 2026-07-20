@@ -31,6 +31,11 @@ jobs:
       - uses: extractions/setup-just@v3
       - name: Set up locked development environments
         run: just setup
+      - name: Validate pull request title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: uv run python -m scripts.check_commit_title "$PR_TITLE"
       - name: Run local-equivalent checks
         run: just check
       - name: Build frontend production assets
