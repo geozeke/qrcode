@@ -23,6 +23,7 @@ variant = "modern"
 features = [
   "navigation.instant",
   "search.highlight",
+  "content.code.copy",
   "content.action.edit",
   "content.action.view",
 ]
