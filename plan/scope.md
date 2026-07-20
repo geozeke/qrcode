@@ -1,6 +1,6 @@
 # QR Code Generator Project Scope
 
-Last updated: 2026-07-06
+Last updated: 2026-07-20
 
 ## Project State
 
@@ -945,8 +945,41 @@ Hosting target:
 Documentation target:
 
 - Initial project documentation should live in `README.md`.
-- If map-assisted location QR code selection is implemented, move to a
-  proper documentation site published with GitLab Pages.
+- Keep README-only documentation for the first release. A formal
+  documentation site is a future option only if the project outgrows
+  that workflow; do not plan a GitLab Pages dependency.
+
+Maintainer workflow and releases:
+
+- Adopt `just` as the single local maintainer interface. Its recipes
+  should include `setup`, `sync`, `lint`, `typecheck`, `test`,
+  `test-e2e`, `image`, `compose-smoke`, `check`, `outdated`, `upgrade`,
+  `bump`, and `tag-release`.
+- `check` must run the same quality gates required by pull-request CI.
+- Keep nontrivial maintenance automation in tracked `scripts/` and call
+  it from `just`. Do not add an extra generated wrapper layer.
+- Add tested helpers for guarded release-tag creation, release-note
+  extraction, targeted first-order dependency upgrades, and image-tag
+  preparation as needed.
+- Use a root `CHANGELOG.md` and `git-cliff` to generate release notes.
+  Do not introduce changelog archives unless the active changelog becomes
+  unwieldy.
+- Store the application version as SemVer and create immutable Git tags
+  in the form `vX.Y.Z`.
+- The release-tag helper must require the `main` branch, a clean working
+  tree, `main` matching `origin/main`, and a tag that does not already
+  exist.
+- Prerelease tags publish only their exact version. Stable releases also
+  update the mutable `latest` image tag.
+- Initially publish release images to a configurable Docker Hub
+  repository, `docker.io/<maintainer-namespace>/qrcode`. Do not hard-code
+  a personal Docker Hub namespace in scripts or workflows.
+- Do not publish an `edge` image for ordinary pushes to `main` in the
+  first release process.
+- When GHCR is introduced, dual-publish identical immutable version tags
+  and `latest` to Docker Hub and `ghcr.io/geozeke/qrcode`. Keep both
+  registries active until a later explicit Docker Hub retirement decision.
+- Document the preferred registry and image pull reference in `README.md`.
 
 Recommended test layers:
 
@@ -1008,15 +1041,25 @@ Recommended test layers:
 
 Recommended GitHub Actions pipeline:
 
-- Pull request workflow: run formatting checks, linting, backend tests,
-  frontend tests, and a Docker build smoke test.
-- Main branch workflow: run the full pull request workflow plus
-  end-to-end tests.
-- Release workflow: build and publish Docker images after tags or GitHub
-  releases are created.
-- Dependency/security workflow: scan Python and TypeScript
-  dependencies, run static analysis where practical, and enable
-  automated dependency update PRs.
+- Pull request workflow: run the local `check`-equivalent formatting,
+  linting, Python and TypeScript type checks, backend/frontend unit and
+  integration tests, decoder-based QR fixtures, and a single-platform
+  Docker image build.
+- Main branch workflow: run the full pull-request workflow plus browser
+  end-to-end and Docker Compose smoke tests.
+- Release workflow: trigger only from a version tag; rerun every required
+  validation, generate GitHub release notes from `CHANGELOG.md`, build
+  and publish multi-architecture images, and verify a started container's
+  health endpoint before publication.
+- Release images must support `linux/amd64` and `linux/arm64` and carry
+  OCI source, version, revision, and license labels, an SBOM, and a
+  provenance attestation.
+- Fail closed: do not create a release or publish an image when a
+  required test, build, or health check fails.
+- Dependency/security workflow: run weekly and when dependency files
+  change; scan Python and TypeScript dependencies, check the adopted
+  license policy, run useful static analysis, and enable Dependabot for
+  Python, npm, and GitHub Actions updates.
 
 Recommended quality gates:
 
@@ -1027,6 +1070,7 @@ Recommended quality gates:
 - Docker image builds successfully.
 - Docker container reaches healthy status after startup.
 - Basic browser flow passes before release.
+- Pull-request quality gates are required GitHub branch-protection checks.
 
 Testing priorities for the first stable release:
 
@@ -1070,13 +1114,17 @@ Phase 2: Core MVP
 - `New Code` or `Reset` control for clearing the current form and
   starting another QR code.
 - PNG, JPG, SVG, and PDF downloads.
+- Baseline payload, rendering, export, scanner-reliability, API, and
+  browser-flow tests.
+- Local `just` recipes and matching GitHub Actions quality gates.
 
 Phase 3: Stabilization
 
 - Improve validation and scanner reliability warnings.
-- Add tests around QR payload encoding, rendering, and exports.
-- Add CI through GitHub Actions for linting, type checks, tests, Docker
-  builds, and release image publishing.
+- Expand test coverage and harden release automation.
+- Refine GitHub Actions workflows for multi-architecture publishing,
+  provenance, SBOMs, dependency policy checks, and a later GHCR
+  dual-publish transition.
 - Refine UI and Docker deployment documentation.
 
 Phase 4: Advanced QR Payloads
@@ -1151,7 +1199,7 @@ Phase 5: Additional Code Formats
   frame, label/caption frame, and transparent padding.
 - GitHub Actions is the recommended CI system.
 - Initial documentation should live in `README.md`.
-- A GitLab Pages documentation site is a future option if map-assisted
-  location QR code selection is implemented.
+- Docker Hub is the initial image registry; GHCR is a later dual-publish
+  registry, not an immediate replacement.
 - The project should prioritize scan reliability over visual
   customization when those goals conflict.
