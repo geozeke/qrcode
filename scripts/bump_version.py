@@ -51,9 +51,16 @@ def require_clean_tree() -> None:
 
 
 def validate_release_commits(tags: list[str]) -> None:
-    """Require Conventional Commit subjects after the release baseline."""
+    """Require Conventional subjects for non-merge release commits."""
     start = tags[0] if tags else CONVENTIONAL_BASELINE
-    subjects = run("git", "log", f"{start}..HEAD", "--format=%s", capture=True)
+    subjects = run(
+        "git",
+        "log",
+        f"{start}..HEAD",
+        "--no-merges",
+        "--format=%s",
+        capture=True,
+    )
     for subject in subjects.splitlines():
         try:
             validate_commit_title(subject)
