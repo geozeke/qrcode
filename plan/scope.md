@@ -156,6 +156,49 @@ Current decision: use a Python/FastAPI backend with a SvelteKit
 TypeScript frontend, managed with `uv` and deployed through Docker
 Compose.
 
+## QR Generation And Rendering Dependencies
+
+Decision:
+
+- Use Segno as the production QR encoder, pinned with
+  `segno>=1.6.6,<2`.
+- Use Segno's QR-only generation path and enforce the first-release
+  version-20 limit in the application.
+- Isolate all Segno calls behind a single encoder adapter. Convert its
+  classified matrix into a normalized internal model containing the QR
+  version, error correction level, module grid, and module-kind map.
+- Use the normalized model, rather than a third-party themed renderer,
+  to enforce functional-module, dot-style, and logo-placement
+  constraints.
+- Use Pillow for PNG/JPG drawing, logo validation/compositing, and JPEG
+  encoding.
+- Generate SVG directly from the normalized model with Python's
+  standard-library XML facilities. Do not add a separate SVG renderer.
+- Use the open-source ReportLab toolkit for vector PDF generation and
+  captions. Do not use ReportLab Plus, RML, `rlextra`, or `pyRXP`.
+- Use ZXing-C++ only as a development and test decoder for generated
+  exports. It must not ship in the production container.
+
+Dependency licensing policy:
+
+- Every production and test dependency must permit no-fee use,
+  modification, and redistribution for both non-commercial and
+  commercial use.
+- Do not add dependencies that require a paid license, license key,
+  hosted service, usage-based fee, or restrictive non-commercial-only
+  terms.
+- Prefer permissive licenses. Adding GPL, AGPL, LGPL, or another
+  reciprocal/copyleft dependency requires an explicit later decision.
+- Record the license of every direct dependency, preserve required
+  notices, and run dependency/license scanning in CI.
+- The selected stack meets this policy: Segno is BSD-3-Clause, Pillow is
+  MIT-CMU, ReportLab Toolkit is BSD, and ZXing-C++ is Apache-2.0.
+
+Dependency upgrade guidance:
+
+- Treat Segno's module classification as an adapter boundary. A Segno
+  upgrade requires adapter and decode tests to pass before adoption.
+
 ## Local Development And Compose Validation
 
 Decision:
@@ -742,6 +785,9 @@ Recommended test layers:
 - Payload tests for scheme insertion and rejection, exact `geo:` output,
   UTF-8 text preservation and byte limits, and Open, WPA, WEP, hidden,
   and escaped-character WiFi payloads.
+- Encoder-adapter tests that verify Segno module classification at QR
+  versions 1, 7, and 20. Use ZXing-C++ in development and CI to decode
+  generated export fixtures.
 - Backend integration tests for HTTP routes used by the website,
   including preview and download endpoints.
 - Frontend unit/component tests for form behavior, validation states,
