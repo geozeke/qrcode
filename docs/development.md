@@ -218,6 +218,8 @@ repository owner configures these GitHub values:
 - Repository secret `DOCKERHUB_TOKEN`, containing a Docker Hub access
   token
 
-Stable releases publish both their exact semantic version and `latest`.
-Prereleases publish only their exact version. GHCR publishing remains a
-later addition and will use the same immutable version tags.
+Stable releases publish their exact semantic version, a mutable
+major/minor tag, and `latest`. Releases at `1.0.0` and later also update
+a mutable major tag; major-zero releases omit the `0` tag. Prereleases
+publish only their exact version. GHCR publishing remains a later
+addition and will use the same tag policy.
