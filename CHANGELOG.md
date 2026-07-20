@@ -6,7 +6,9 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-07-20
+
+[View release tag](https://github.com/geozeke/qrcode/releases/tag/v0.1.0)
 
 ### Added
 
@@ -29,3 +31,18 @@ project uses
 
 - Provide user, deployment, and contributor documentation through
   Zensical.
+
+### Fixed
+
+- Fix local upgrade tooling ([f88f158](https://github.com/geozeke/qrcode/commit/f88f158c4af08faf6d0a7d716ffe21cfbf673eb2))
+- Fix release validator ([254a97b](https://github.com/geozeke/qrcode/commit/254a97befae263adb2dbc3cdfd218a5cd25f9909))
+
+### Deployment & Operations
+
+- Update CI pipeline (#13) ([c513c92](https://github.com/geozeke/qrcode/commit/c513c92e5dc519c235efbcb18b1c91f30ca6fff4))
+- Update dockerhub semantic versioning to support minor tags ([6d99272](https://github.com/geozeke/qrcode/commit/6d992728f8109111597aed5de4be090971ba71f5))
+- Set up CI pipeline for dockerhub metadata ([12ae29a](https://github.com/geozeke/qrcode/commit/12ae29a5e5401e6ae1cee31608a2a4f9f97e251b))
+
+### Dependencies
+
+- *(deps)* Upgrade direct dependencies ([8410a62](https://github.com/geozeke/qrcode/commit/8410a62715250039a4f5f89a631dcd874461e943))
