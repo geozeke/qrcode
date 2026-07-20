@@ -16,7 +16,8 @@ published at <https://geozeke.github.io/qrcode/>.
 Release images use the Docker Hub reference
 `docker.io/<maintainer-namespace>/qrcode:<version>`, with the namespace
 configured by the project maintainer. See the
-[deployment guide](docs/deployment.md) for registry setup.
+[getting-started guide](docs/getting-started.md) to deploy a published
+image.
 
 ## Quick start
 

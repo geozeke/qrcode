@@ -120,3 +120,16 @@ A weekly security workflow runs Python and npm dependency audits,
 CodeQL analysis, repository scanning, and the license inventory check.
 Dependabot monitors uv, npm, Docker, Docker Compose, and GitHub Actions
 dependencies.
+
+Release tags publish multi-architecture `linux/amd64` and `linux/arm64`
+images to Docker Hub. The repository owner configures these GitHub values:
+
+- Repository variable `DOCKERHUB_REPOSITORY`, containing
+  `namespace/qrcode`
+- Repository variable `DOCKERHUB_USERNAME`
+- Repository secret `DOCKERHUB_TOKEN`, containing a Docker Hub access
+  token
+
+Stable releases publish both their exact semantic version and `latest`.
+Prereleases publish only their exact version. GHCR publishing remains a
+later addition and will use the same immutable version tags.
