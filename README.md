@@ -1,5 +1,11 @@
 # QR Code Generator
 
+<img
+  src="docs/assets/dinobox-logo.png"
+  alt="Dinobox logo"
+  width="120"
+/>
+
 A private, stateless, self-hostable web application for creating
 scanner-safe QR codes and exporting them as PNG, JPG, SVG, or PDF.
 

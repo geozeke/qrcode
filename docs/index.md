@@ -1,5 +1,11 @@
 # QR Code Generator
 
+<img
+  src="assets/dinobox-logo.png"
+  alt="Dinobox logo"
+  width="120"
+/>
+
 QR Code Generator is a focused, self-hostable web utility for creating
 scanner-safe QR codes. It accepts website URLs, geographic coordinates,
 plain text, and WiFi network details.
