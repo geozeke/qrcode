@@ -982,8 +982,13 @@ Maintainer workflow and releases:
   extraction, targeted first-order dependency upgrades, and image-tag
   preparation as needed.
 - Use a root `CHANGELOG.md` and `git-cliff` to generate release notes.
-  Do not introduce changelog archives unless the active changelog becomes
-  unwieldy.
+  Keep the active major/minor release line in that file and archive
+  older lines under `changelogs/vX.Y.x.md` when a new minor or major
+  line begins.
+- Use Conventional Commit pull-request titles to classify user-facing
+  changes. Include breaking, added, changed, deprecated, removed, fixed,
+  security, performance, deployment, documentation, dependency, and
+  reverted changes; omit routine internal maintenance.
 - Store the application version as SemVer and create immutable Git tags
   in the form `vX.Y.Z`.
 - The release-tag helper must require the `main` branch, a clean working
@@ -1067,17 +1072,22 @@ Recommended GitHub Actions pipeline:
   Docker image build.
 - Main branch workflow: run the full pull-request workflow plus browser
   end-to-end and Docker Compose smoke tests.
-- Release workflow: trigger only from a version tag; rerun every required
-  validation, generate GitHub release notes from `CHANGELOG.md`, build
-  and publish multi-architecture images, and verify a started container's
-  health endpoint before publication.
+- Release workflow: trigger only from a version tag; rerun every
+  required validation, extract GitHub release notes from the active or
+  archived changelog, build and publish multi-architecture images,
+  verify a started container's health endpoint before publication, and
+  publish a matching GitHub Release after the image succeeds.
 - Release images must support `linux/amd64` and `linux/arm64` and carry
   OCI source, version, revision, and license labels, an SBOM, and a
   provenance attestation.
 - Fail closed: do not create a release or publish an image when a
   required test, build, or health check fails.
+- Run desktop and mobile browser tests for pull requests, pushes to
+  `main`, manual quality runs, and release tags; retain failure
+  diagnostics as short-lived workflow artifacts.
 - Dependency/security workflow: run weekly and when dependency files
-  change; scan Python and TypeScript dependencies, check the adopted
+  change; limit Dependabot updates to direct dependencies, scan the full
+  Python and TypeScript dependency graphs, check the adopted
   license policy, run useful static analysis, and enable Dependabot for
   Python, npm, and GitHub Actions updates.
 

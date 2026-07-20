@@ -30,13 +30,22 @@ jobs:
       - uses: extractions/setup-just@v3
       - name: Set up locked development environments
         run: just setup
-      - name: Validate semantic version tag
-        run: |
-          [[ "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]]
+      - name: Validate release metadata and notes
+        run: uv run python -m scripts.validate_release "$GITHUB_REF_NAME"
       - run: just check
       - name: Install Chromium
         run: npm --prefix frontend exec -- playwright install --with-deps chromium
       - run: just test-e2e
+      - name: Upload browser test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: release-playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Test release deployment on host Docker Engine
         env:
           QR_IMAGE: qrcode:release-candidate
@@ -104,3 +113,43 @@ jobs:
             CREATED=${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.created'] }}
           provenance: mode=max
           sbom: true
+
+  release:
+    name: Publish GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.29"
+      - name: Extract release notes
+        run: uv run python -m scripts.extract_release_notes "$GITHUB_REF_NAME" .release-notes.md
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="QR Code Generator $GITHUB_REF_NAME"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "$title" \
+              --notes-file .release-notes.md
+          elif [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            gh release create "$GITHUB_REF_NAME" \
+              --title "$title" \
+              --notes-file .release-notes.md \
+              --prerelease \
+              --verify-tag
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "$title" \
+              --notes-file .release-notes.md \
+              --verify-tag
+          fi

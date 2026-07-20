@@ -25,6 +25,7 @@ clean:
         frontend/.svelte-kit frontend/build frontend/coverage \
         frontend/playwright-report frontend/test-results
     rm -f -- .coverage .coverage.* coverage.xml
+    rm -f -- .release-notes.md
     find src tests frontend/src frontend/tests \
         -type d -name __pycache__ -prune -exec rm -rf -- {} +
     find src -type d -name '*.egg-info' -prune -exec rm -rf -- {} +
@@ -58,7 +59,7 @@ lint:
 
 # Run Python and frontend static type checks
 typecheck:
-    uv run mypy src
+    uv run mypy src scripts
     npm --prefix frontend run check
 
 # Run the host backend and frontend test suites
@@ -103,6 +104,15 @@ deployment-test:
 # Run the complete host quality-check suite
 check: lint typecheck test docs-build licenses
 
+# Preview user-facing changes since the latest release
+changelog:
+    #!/usr/bin/env bash
+    if ! command -v git-cliff >/dev/null 2>&1; then
+        echo "qrcode requires git-cliff. See docs/development.md." >&2
+        exit 1
+    fi
+    git-cliff --unreleased
+
 # Report outdated direct Python and frontend dependencies
 outdated:
     uv tree --outdated --depth=1 --all-groups
@@ -114,8 +124,8 @@ upgrade:
 
 # Update project files to the specified release version
 bump version:
-    bash scripts/bump_version.sh {{ version }}
+    uv run python -m scripts.bump_version {{ version }}
 
 # Create and push the current version's release tag
 tag-release:
-    bash scripts/release_tags.sh
+    uv run python -m scripts.tag_release

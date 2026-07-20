@@ -1,11 +1,20 @@
 # Development
 
-## Requirements
+## Required developer dependencies
 
+Install all of these tools before running the project setup:
+
+- Git
+- Bash
+- [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`)
 - Python 3.12
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 22.13 or newer with npm (Node.js 23 is not supported)
-- `just`
+- [just](https://just.systems/)
+- [git-cliff](https://git-cliff.org/), required by `just changelog` and
+  the release-preparation workflow
+- curl, used by the Docker deployment smoke tests
+- OpenSSL, used to generate secrets for Docker Compose deployments
 - Docker Engine
 - A current Docker Compose release, available as either `docker compose`
   or `docker-compose`
@@ -92,6 +101,77 @@ the non-root runtime user, read-only root filesystem, and graceful
 shutdown. The proxy suite verifies private application networking plus
 loopback binding and the documented request-size and rate limits.
 
+## Changelog and releases
+
+Pull-request titles use Conventional Commits because squash merges make
+the title the commit subject on `main`. CI validates the title. The
+supported user-facing types are:
+
+| Type | Changelog section |
+| --- | --- |
+| `feat` | Added |
+| `change` | Changed |
+| `deprecate` | Deprecated |
+| `remove` | Removed |
+| `fix` | Fixed |
+| `security` or `fix(security)` | Security |
+| `perf` | Performance |
+| `deploy` | Deployment & Operations |
+| `docs` | Documentation |
+| `build(deps)` or `build(deps-dev)` | Dependencies |
+| `revert` | Reverted |
+
+Use an optional scope when it adds useful context, for example
+`fix(a11y): label the preview` or
+`deploy(compose): document the proxy network`. Mark a breaking change
+with `!`, as in `deploy!: rename the render secret`, and explain the
+migration in the commit body's `BREAKING CHANGE:` footer. Routine
+`build`, `chore`, `ci`, `refactor`, `style`, and `test` commits do not
+appear in the changelog unless they are breaking.
+
+Preview changelog-visible commits since the latest release without
+changing files:
+
+```console
+just changelog
+```
+
+Prepare a release from a clean release-preparation branch with an
+explicit bare semantic version:
+
+```console
+just bump 0.2.0
+just check
+git add CHANGELOG.md changelogs pyproject.toml uv.lock frontend/package.json frontend/package-lock.json
+git commit -m "chore(release): prepare for 0.2.0"
+```
+
+The bump command updates both application versions and lockfiles,
+generates the release section, and restores the original files if a
+step fails. It is safe to rerun the same untagged version after adding
+release changes. The initial `0.1.0` preparation promotes the curated
+`Unreleased` baseline. Later patch and prerelease entries remain in the
+active `X.Y` line; starting a new minor or major line moves older
+entries to files under
+[the changelog archive](https://github.com/geozeke/qrcode/tree/main/changelogs).
+
+After the release-preparation change is merged, update local `main` and
+create the release tag:
+
+```console
+git switch main
+git pull --ff-only origin main
+just tag-release
+```
+
+Tagging requires a clean `main` that exactly matches `origin/main`,
+synchronized Python and frontend versions, committed release notes, and
+a tag that does not already exist. It creates and pushes one annotated
+`vX.Y.Z` tag. The tag workflow reruns every release gate, publishes the
+Docker images, and creates the GitHub Release from the committed
+changelog section. Prerelease versions such as `0.2.0-rc.1` create
+GitHub prereleases and do not update the Docker `latest` tag.
+
 ## Documentation
 
 Documentation sources are Markdown files in `docs/`. Preview the site at
@@ -115,17 +195,22 @@ committed.
 Pull requests and pushes to `main` run formatting, linting, type checks,
 backend and frontend tests, strict documentation builds,
 direct-dependency license policy checks, and the complete on-host Docker
-deployment gate. Pushes to `main` additionally run desktop/mobile
-browser tests. Release tags rerun the deployment gate against the exact
-release candidate before publishing images.
+deployment gate. Pull requests, pushes to `main`, manual quality runs,
+and release tags also run desktop/mobile browser tests. Failed browser
+runs retain their Playwright report and traces as workflow artifacts for
+14 days. Release tags rerun every gate against the exact release
+candidate before publishing images.
 
 A weekly security workflow runs Python and npm dependency audits,
 CodeQL analysis, repository scanning, and the license inventory check.
-Dependabot monitors uv, npm, Docker, Docker Compose, and GitHub Actions
-dependencies.
+Dependabot proposes updates only for direct dependencies declared in
+the uv, npm, Docker, Docker Compose, and GitHub Actions manifests. The
+security audits continue to scan the complete resolved dependency
+graph, including transitive dependencies.
 
 Release tags publish multi-architecture `linux/amd64` and `linux/arm64`
-images to Docker Hub. The repository owner configures these GitHub values:
+images to Docker Hub and publish matching GitHub Releases. The
+repository owner configures these GitHub values:
 
 - Repository variable `DOCKERHUB_REPOSITORY`, containing
   `namespace/qrcode`

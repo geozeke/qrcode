@@ -4,29 +4,54 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     groups:
       python-dependencies:
         patterns: ["*"]
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
     groups:
       frontend-dependencies:
         patterns: ["*"]
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
+    commit-message:
+      prefix: build
+      include: scope
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    allow:
+      - dependency-type: direct
+    commit-message:
+      prefix: build
+      include: scope

@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Application quality
@@ -31,6 +35,11 @@ jobs:
       - uses: extractions/setup-just@v3
       - name: Set up locked development environments
         run: just setup
+      - name: Validate pull request title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: uv run python -m scripts.check_commit_title "$PR_TITLE"
       - name: Run local-equivalent checks
         run: just check
       - name: Build frontend production assets
@@ -38,7 +47,6 @@ jobs:
 
   browser:
     name: Browser tests
-    if: github.event_name != 'pull_request'
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -53,6 +61,16 @@ jobs:
       - name: Install Chromium
         run: npm --prefix frontend exec -- playwright install --with-deps chromium
       - run: npm --prefix frontend run test:e2e
+      - name: Upload browser test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
 
   container:
     name: Production container

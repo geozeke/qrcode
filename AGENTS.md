@@ -49,5 +49,10 @@ options, previewing the result, and downloading generated codes.
   documentation site and local Markdown sources.
 - Run `just docs-build` after documentation or Zensical configuration
   changes. GitHub Pages publishes the strict Zensical build from `main`.
+- Use Conventional Commit titles for pull requests. Changelog-visible
+  types and release steps are documented in `docs/development.md`.
+- Do not edit generated release or archive sections directly. Preview
+  pending entries with `just changelog` and prepare releases with
+  `just bump <version>`.
 - When reviewing or changing `.gitignore`, also inspect Git's configured
   global excludes and account for them in recommendations.

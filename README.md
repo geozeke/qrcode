@@ -19,17 +19,23 @@ configured by the project maintainer. See the
 [getting-started guide](docs/getting-started.md) to deploy a published
 image.
 
-## Quick start
+## Quick start from source
 
-Copy `.env.example` to `.env`, replace the example render-token secret,
-then run:
+For a local build from a repository checkout, copy `.env.example` to
+`.env`, generate a render-token secret with `openssl rand -hex 32`, and
+replace the example secret in `.env`. Then run:
 
 ```console
-docker compose up --build
+docker compose up --build --detach --wait
 ```
 
 Open <http://127.0.0.1:8080>. Public deployments should place the app
 behind a reverse proxy.
+
+To deploy a published image instead of building the source checkout,
+follow the [getting-started guide](docs/getting-started.md). It provides
+the copy-ready Compose configuration, image-tag guidance, deployment
+verification, and update workflow.
 
 ## Documentation
 
@@ -40,7 +46,8 @@ just docs-serve
 ```
 
 See the [development guide](docs/development.md) for the complete local
-workflow.
+workflow. Release history is recorded in the
+[changelog](CHANGELOG.md).
 
 ## License
 
