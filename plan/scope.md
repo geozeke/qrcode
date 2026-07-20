@@ -1082,6 +1082,9 @@ Recommended GitHub Actions pipeline:
   provenance attestation.
 - Fail closed: do not create a release or publish an image when a
   required test, build, or health check fails.
+- Run desktop and mobile browser tests for pull requests, pushes to
+  `main`, manual quality runs, and release tags; retain failure
+  diagnostics as short-lived workflow artifacts.
 - Dependency/security workflow: run weekly and when dependency files
   change; limit Dependabot updates to direct dependencies, scan the full
   Python and TypeScript dependency graphs, check the adopted

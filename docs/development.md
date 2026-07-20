@@ -195,9 +195,11 @@ committed.
 Pull requests and pushes to `main` run formatting, linting, type checks,
 backend and frontend tests, strict documentation builds,
 direct-dependency license policy checks, and the complete on-host Docker
-deployment gate. Pushes to `main` additionally run desktop/mobile
-browser tests. Release tags rerun the deployment gate against the exact
-release candidate before publishing images.
+deployment gate. Pull requests, pushes to `main`, manual quality runs,
+and release tags also run desktop/mobile browser tests. Failed browser
+runs retain their Playwright report and traces as workflow artifacts for
+14 days. Release tags rerun every gate against the exact release
+candidate before publishing images.
 
 A weekly security workflow runs Python and npm dependency audits,
 CodeQL analysis, repository scanning, and the license inventory check.
