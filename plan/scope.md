@@ -481,14 +481,48 @@ Planning notes:
 - JPG is useful when users need broad compatibility with systems that do
   not accept PNG or SVG.
 - PDF is useful for print and layout workflows.
-- PDF export should support page layout options such as page size,
-  margins, and labels.
-- Transparent backgrounds should be supported for PNG and SVG as an
-  advanced export option, but opaque white should remain the default.
-- Transparent exports must preserve the QR quiet zone as transparent
-  space, and the UI should warn users to place the code on a plain,
-  high-contrast background with clear margin around the code.
-- JPG and PDF exports should use an opaque background.
+
+Export sizing:
+
+- Digital downloads use module-scale presets rather than a fixed pixel
+  canvas: Compact at 8 pixels per module, Standard at 12 pixels per
+  module, and Large at 24 pixels per module. Standard is the default.
+- The chosen scale applies to the QR matrix and its four-module quiet
+  zone. Frames, captions, and external padding extend the final canvas
+  outside that area.
+
+Format-specific behavior:
+
+- PNG is a lossless RGBA or RGB image at the selected pixel dimensions
+  with 300-DPI metadata.
+- JPG is an opaque RGB image on white at quality 95, with chroma
+  subsampling disabled and no resampling.
+- SVG must retain QR modules and structural patterns as vector geometry
+  in a module-based `viewBox` that includes the quiet zone. PNG/JPG
+  logos must be embedded as self-contained data URIs; SVG must not use
+  external image references or rasterize the QR code.
+- PDF is a single vector page. Support A4 (the default) and US Letter,
+  portrait and landscape orientation, and 12 mm (the default), 20 mm, or
+  25 mm margins.
+- PDF QR-symbol sizes are 50, 75, 100 (the default), 125, and 150 mm.
+  Reject sizes that do not fit the usable page area or fall below one
+  millimeter per module. The selected size includes the quiet zone but
+  excludes external frames and captions.
+- PDF captions are optional and blank by default. Limit captions to 120
+  characters, center them below the QR symbol in 12 pt text, and keep at
+  least 4 mm between the caption and the quiet zone.
+
+Transparency and downloads:
+
+- Transparency is available only for PNG and SVG. It makes the
+  background and quiet zone transparent, while modules and the logo's
+  required white backing remain opaque.
+- Transparent exports must show a warning that the final code needs a
+  plain, light, high-contrast background with a clear margin around it.
+- JPG and PDF exports must use an opaque white background.
+- Download filenames use `qrcode-{payload-type}.{extension}`. Responses
+  use `image/png`, `image/jpeg`, `image/svg+xml`, and `application/pdf`
+  MIME types for PNG, JPG, SVG, and PDF respectively.
 
 ## Persistence Model
 
@@ -719,6 +753,10 @@ Recommended test layers:
 - Image/export tests that verify PNG, JPG, SVG, and PDF outputs are
   generated, non-empty, and have expected dimensions/content
   characteristics.
+- Export-contract tests that verify module-scale geometry for versions 1
+  and 20, PNG/JPG dimensions and modes, SVG vector geometry and embedded
+  logos, PDF layout/caption spacing, transparent alpha behavior, and
+  opaque JPG/PDF behavior.
 - Scanner-reliability tests that verify quiet-zone and functional-module
   invariants and successfully decode representative square, dot,
   transparent, logo, and version-20 exports after rasterization.
