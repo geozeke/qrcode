@@ -1141,10 +1141,41 @@ Phase 5: Additional Code Formats
   constrained physical labels or narrow print areas.
 - UPC-A is a future capability, not part of the first stable release.
 
-## Key Open Questions
+## Presets
 
-1. Should there be presets, such as print, web, high-contrast,
-   logo-safe, or label-ready?
+Decision:
+
+- Do not provide named presets in the first stable release. Use the
+  scanner-safe defaults and clearly grouped, explicit controls instead.
+- The `New Code` or `Reset` action is the only first-release mechanism
+  for returning to a known initial configuration.
+- Do not store a preset selection or user configuration. This preserves
+  the first-release stateless model.
+
+Rationale:
+
+- High contrast is already the default and is enforced by the color
+  constraints.
+- Logo safety is enforced by validation and must not depend on a user
+  selecting a preset.
+- Print and web needs are expressed through the existing PDF and digital
+  export controls.
+- A label-ready preset would require label-size and layout decisions that
+  are outside the first-release scope.
+
+Future preset direction:
+
+- After the core application is stable, consider only built-in,
+  stateless one-click starting points. Do not add saved user templates
+  or preset persistence without a later explicit decision.
+- Initial candidates are Print (PDF, A4, portrait, 100 mm symbol, and
+  default margins), Web (SVG, Standard digital scale, no frame), and
+  Label only after its dimensions and layout are specified.
+- Applying a future preset must visibly set the ordinary controls and
+  leave them editable. Any subsequent manual change must show the state
+  as custom.
+- Presets must never bypass validation or scanner-reliability
+  constraints.
 
 ## Current Assumptions
 
