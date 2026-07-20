@@ -104,8 +104,8 @@ Preview behavior decision:
 
 - QR previews should update live while users edit payload and visual
   options.
-- Live preview updates may be debounced or throttled to avoid excessive
-  backend requests and UI churn.
+- Debounce preview requests by 300 ms and abort superseded requests to
+  avoid excessive backend work and UI churn.
 - The preview should show validation feedback instead of generating a
   code when the current form state is incomplete or invalid.
 - The download action should use the same validated render state shown
@@ -676,10 +676,34 @@ Key design principle:
 
 Decision:
 
-- The first release should include backend HTTP routes used by the
-  website for QR generation, preview, validation, and file download.
-- Those routes should be designed cleanly, but they are considered
-  internal application routes at first.
+- The first release uses same-origin, unversioned internal routes. They
+  are not a supported automation API, and the app must not enable CORS.
+- `POST /api/preview` accepts `multipart/form-data` with a `request`
+  JSON field containing the complete render state and an optional
+  PNG/JPG `logo` file. It returns `200 image/png` with
+  `Cache-Control: no-store` and an `X-Render-Token` response header.
+- `POST /api/download` accepts the same multipart fields plus
+  `render_token`. The `request` includes the selected output format and
+  export settings. It returns the requested file with its selected MIME
+  type and a `Content-Disposition: attachment` header.
+- Preview performs validation. Do not add a separate validation route.
+- Normalize each request before rendering, then compute a canonical
+  fingerprint from the normalized state and the SHA-256 hash of the
+  logo.
+- The preview response returns a 10-minute HMAC-authenticated render
+  token containing only the expiry, fingerprint, and logo hash. It must
+  not include payload text or WiFi passwords.
+- Download recomputes the fingerprint from its submitted request and
+  logo, then accepts it only when it matches the token. The backend must
+  not store render records, uploads, or tokens.
+- Require `QR_RENDER_TOKEN_SECRET` at startup with at least 32 random
+  bytes. Never log render tokens or request content.
+- Use `400` for malformed multipart/JSON, `415` for unsupported logo
+  media, `422` for field validation errors, `409` for a state or logo
+  mismatch, `410` for an expired token, and a sanitized `500` response
+  for unexpected render failures.
+- Validation responses use
+  `{error, issues: [{path, code, message}]}`.
 - A documented public HTTP API for external automation is a future
   capability, not a first-release commitment.
 - First-release HTTP routes should not require app-level
@@ -689,13 +713,12 @@ Decision:
 
 Rationale:
 
-- The website will need a generation interface anyway, so the backend
-  should use clear request and response structures from the start.
+- The signed render token ensures that a download uses the same
+  validated source and render state as its preview without making the
+  stateless app retain uploaded logos or generated files.
 - Deferring public API support and built-in authentication avoids extra
-  first-release work around versioning, formal documentation,
-  authentication behavior, rate limits, and long-term compatibility.
-- This keeps the project extensible for future scripts, integrations,
-  and batch generation.
+  first-release work around compatibility, authentication behavior, rate
+  limits, and long-term versioning.
 
 ## Validation Rules To Define
 
@@ -790,12 +813,18 @@ Recommended test layers:
   generated export fixtures.
 - Backend integration tests for HTTP routes used by the website,
   including preview and download endpoints.
+- API tests that accept a valid preview token for the same normalized
+  request, reject altered state or logo bytes, reject expired or
+  tampered tokens, verify validation error responses, and verify
+  no-store previews.
 - Frontend unit/component tests for form behavior, validation states,
   option selection, dark mode, and download controls.
 - End-to-end browser tests for the main user flows: generate URL QR
   code, generate geo QR code, generate plain text QR code, generate WiFi
   QR code, upload logo, change colors, switch dark mode, and download
   each required format.
+- Browser tests that verify rapid edits cancel stale previews and cannot
+  replace the latest preview or render token.
 - Image/export tests that verify PNG, JPG, SVG, and PDF outputs are
   generated, non-empty, and have expected dimensions/content
   characteristics.
