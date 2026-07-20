@@ -1,0 +1,138 @@
+# Development
+
+## Requirements
+
+- Python 3.12
+- [uv](https://docs.astral.sh/uv/)
+- Node.js 22.13 or newer with npm (Node.js 23 is not supported)
+- `just`
+- Docker Engine
+- A current Docker Compose release, available as either `docker compose`
+  or `docker-compose`
+
+Verify the container tooling before running deployment tests:
+
+```console
+docker info
+docker compose version  # or: docker-compose version
+```
+
+## Set up
+
+```console
+just setup
+```
+
+Setup verifies Git, Node.js, npm, and `uv`, installs every locked Python
+dependency group, installs the locked frontend dependencies, ensures the
+Playwright Chromium browser is available for end-to-end tests, and
+records successful initialization in `.init/setup`. It is safe to rerun;
+an existing setup rechecks the browser installation. Use the following
+commands when a completely fresh environment is needed:
+
+```console
+just reset
+just setup
+```
+
+`just clean` removes generated caches (including the uv cache), reports,
+and build outputs while preserving installed environments. `just reset`
+additionally removes `.venv`, frontend `node_modules`, and the setup
+marker.
+
+Start the backend and frontend development servers together:
+
+```console
+just run
+```
+
+The recipe generates an ephemeral render-token secret unless
+`QR_RENDER_TOKEN_SECRET` is already set, waits for the backend to become
+healthy, and then starts Vite. Press Ctrl+C to stop both servers.
+
+The frontend development server proxies `/api` and `/health` to the
+backend on port 8080.
+
+## Quality checks
+
+```console
+just test
+just check
+just test-e2e
+```
+
+`just test` is the normal pre-commit host test suite and runs the backend
+and frontend unit/integration tests. `just check` adds formatting,
+linting, type checking, a strict documentation build, and dependency
+license validation. Browser and Docker deployment suites remain separate
+because they require additional host services or installed browser
+binaries.
+
+Run the complete on-host deployment gate with:
+
+```console
+just deployment-test
+```
+
+This builds the production image and runs both the application and proxy
+deployment suites against the host Docker Engine. The scripts accept
+either the `docker compose` plugin form or the standalone
+`docker-compose` command. The image installs pinned `uv` tooling and
+syncs its production environment from `uv.lock` with Python 3.12.
+Individual suites remain available with:
+
+```console
+just compose-smoke
+just proxy-smoke
+```
+
+The application suite verifies health, a real preview/download cycle,
+the packaged frontend, loopback binding, OCI metadata, resource limits,
+the non-root runtime user, read-only root filesystem, and graceful
+shutdown. The proxy suite verifies private application networking plus
+loopback binding and the documented request-size and rate limits.
+
+## Documentation
+
+Documentation sources are Markdown files in `docs/`. Preview the site at
+<http://localhost:8000> while editing:
+
+```console
+just docs-serve
+```
+
+Build the same strict static site used by GitHub Pages:
+
+```console
+just docs-build
+```
+
+The generated `site/` directory is build output and must not be
+committed.
+
+## Continuous integration
+
+Pull requests and pushes to `main` run formatting, linting, type checks,
+backend and frontend tests, strict documentation builds,
+direct-dependency license policy checks, and the complete on-host Docker
+deployment gate. Pushes to `main` additionally run desktop/mobile
+browser tests. Release tags rerun the deployment gate against the exact
+release candidate before publishing images.
+
+A weekly security workflow runs Python and npm dependency audits,
+CodeQL analysis, repository scanning, and the license inventory check.
+Dependabot monitors uv, npm, Docker, Docker Compose, and GitHub Actions
+dependencies.
+
+Release tags publish multi-architecture `linux/amd64` and `linux/arm64`
+images to Docker Hub. The repository owner configures these GitHub values:
+
+- Repository variable `DOCKERHUB_REPOSITORY`, containing
+  `namespace/qrcode`
+- Repository variable `DOCKERHUB_USERNAME`
+- Repository secret `DOCKERHUB_TOKEN`, containing a Docker Hub access
+  token
+
+Stable releases publish both their exact semantic version and `latest`.
+Prereleases publish only their exact version. GHCR publishing remains a
+later addition and will use the same immutable version tags.

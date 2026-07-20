@@ -1,26 +1,26 @@
 # QR Code Project Notes
 
-This repository is for a planning-stage, self-hostable QR code generator
-web app. The intended product is a focused utility for entering QR payloads,
-configuring visual options, previewing the result, and downloading generated
-codes.
+This repository contains a self-hostable QR code generator web app. The
+product is a focused utility for entering QR payloads, configuring visual
+options, previewing the result, and downloading generated codes.
 
 ## Current State
 
 - `plan/scope.md` is the current source of truth for product scope,
-  architecture direction, and open questions.
-- `README.md` is currently only a stub.
-- No application source exists yet. Do not add application code until the
-  planning scope is agreed.
+  architecture direction, and accepted decisions.
+- `README.md` is a concise project entry point. Detailed documentation
+  lives as Markdown in `docs/` and is built with Zensical.
+- Application implementation is underway. Keep changes within the agreed
+  scope unless the user explicitly changes it.
 
-## Planned Entry Points
+## Entry Points
 
 - Backend: Python/FastAPI, with internal HTTP routes for the web UI.
 - Frontend: SvelteKit with TypeScript.
 - Deployment: Docker, with Docker Compose as the main self-hosted setup.
 - Python dependency management and tooling: Astral `uv`.
-- Future source areas may include payload, format, rendering, export, API,
-  and web modules.
+- Backend source is under `src/qrcode_web/`, frontend source is under
+  `frontend/`, and backend tests are under `tests/`.
 
 ## Working Constraints
 
@@ -44,5 +44,10 @@ codes.
   functions.
 - Run Ruff through `uv` for Python code changes when project tooling is
   available.
+- Keep detailed user, deployment, and contributor documentation in
+  `docs/`. Keep `README.md` intentionally concise and link into the
+  documentation site and local Markdown sources.
+- Run `just docs-build` after documentation or Zensical configuration
+  changes. GitHub Pages publishes the strict Zensical build from `main`.
 - When reviewing or changing `.gitignore`, also inspect Git's configured
   global excludes and account for them in recommendations.

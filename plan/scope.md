@@ -4,11 +4,9 @@ Last updated: 2026-07-20
 
 ## Project State
 
-This project is in planning only. No application code should be written
-until the planning scope is agreed.
-
-The only intended artifact at this stage is this document:
-`./plan/scope.md`.
+Planning decisions for the first release are agreed, and implementation
+is underway. This document remains the source of truth for accepted
+product scope and architecture.
 
 Repository status:
 
@@ -16,6 +14,20 @@ Repository status:
 - The current branch is `main`.
 - The origin remote is `git@github.com:geozeke/qrcode.git`.
 - The repository has been pushed to origin.
+- Backend, frontend, container, and test scaffolding now exists locally.
+- Payload, visual, logo, and export rendering are implemented.
+- Resource-limit and privacy hardening is implemented, including bounded
+  worker processes, route deadlines, request limits, sanitized errors,
+  privacy-safe logging, and response security headers.
+- Frontend refinement and accessibility are implemented, including
+  responsive layouts, persisted dark mode, accessible form feedback,
+  cancellable live previews, exact-state downloads, component tests,
+  automated accessibility checks, and desktop/mobile browser tests.
+- CI and deployment automation are implemented, including matching
+  quality gates, on-host Docker and reverse-proxy deployment tests,
+  dependency and container scanning, Dependabot configuration,
+  direct-license policy checks, and validated multi-architecture Docker
+  Hub publishing.
 
 ## Product Goal
 
@@ -944,10 +956,18 @@ Hosting target:
 
 Documentation target:
 
-- Initial project documentation should live in `README.md`.
-- Keep README-only documentation for the first release. A formal
-  documentation site is a future option only if the project outgrows
-  that workflow; do not plan a GitLab Pages dependency.
+- Keep `README.md` as a concise project entry point with a short quick
+  start and links to the full documentation.
+- Store detailed user, deployment, and contributor documentation as
+  Markdown under `docs/` so it remains useful in a local checkout.
+- Build the documentation with Zensical using a repository-root
+  `zensical.toml` configuration, its modern theme, and a locked
+  development dependency.
+- Publish the strict static Zensical build to
+  `https://geozeke.github.io/qrcode/` through GitHub Actions and GitHub
+  Pages on changes merged to `main`.
+- Do not add documentation versioning for the first release. The site
+  tracks the documentation on `main`.
 
 Maintainer workflow and releases:
 
@@ -1229,7 +1249,8 @@ Future preset direction:
 - Supported border types are quiet-zone only, solid frame, rounded
   frame, label/caption frame, and transparent padding.
 - GitHub Actions is the recommended CI system.
-- Initial documentation should live in `README.md`.
+- Detailed documentation should live as local Markdown under `docs/`,
+  be built with Zensical, and be published through GitHub Pages.
 - Docker Hub is the initial image registry; GHCR is a later dual-publish
   registry, not an immediate replacement.
 - The project should prioritize scan reliability over visual

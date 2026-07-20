@@ -12,6 +12,7 @@ coverage.xml
 htmlcov/
 
 # Python environments and local tooling caches
+.init/
 .venv/
 venv/
 env/
@@ -22,6 +23,9 @@ node_modules/
 dist/
 build/
 coverage/
+playwright-report/
+test-results/
+site/
 
 # Environment and local configuration
 .env

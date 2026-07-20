@@ -1,0 +1,66 @@
+name: Security
+
+on:
+  schedule:
+    - cron: "23 7 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - ".github/dependabot.yml"
+      - ".github/workflows/security.yml"
+      - "Dockerfile"
+      - "compose*.yaml"
+      - "config/dependency-licenses.toml"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  dependencies-and-code:
+    name: Dependencies and static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript,python
+      - name: Scan repository
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.29"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Audit Python dependencies
+        run: uv run --locked --all-groups pip-audit
+      - name: Audit JavaScript dependencies
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend audit --audit-level=high
+      - name: Check direct dependency licenses
+        run: uv run --locked python scripts/check_dependency_licenses.py
+      - name: Analyze source
+        uses: github/codeql-action/analyze@v4
