@@ -1,0 +1,43 @@
+name: Docker Hub description
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/dockerhub-description.yml"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dockerhub-description
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: Update repository overview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate Docker Hub configuration
+        env:
+          DOCKERHUB_REPOSITORY: ${{ vars.DOCKERHUB_REPOSITORY }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          test -n "$DOCKERHUB_REPOSITORY"
+          test -n "$DOCKERHUB_USERNAME"
+          test -n "$DOCKERHUB_TOKEN"
+          [[ "$DOCKERHUB_REPOSITORY" == */qrcode ]]
+      - name: Update Docker Hub repository overview
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ vars.DOCKERHUB_REPOSITORY }}
+          short-description: Private, stateless, self-hostable QR code generator
+          readme-filepath: ./README.md
+          enable-url-completion: true

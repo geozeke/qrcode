@@ -218,6 +218,11 @@ repository owner configures these GitHub values:
 - Repository secret `DOCKERHUB_TOKEN`, containing a Docker Hub access
   token
 
+Pushes that change `README.md` on `main` synchronize the Docker Hub
+Repository Overview and short description with the repository. The
+workflow can also be run manually after configuring Docker Hub or when
+the overview needs to be refreshed.
+
 Stable releases publish their exact semantic version, a mutable
 major/minor tag, and `latest`. Releases at `1.0.0` and later also update
 a mutable major tag; major-zero releases omit the `0` tag. Prereleases
