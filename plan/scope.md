@@ -374,10 +374,18 @@ Logo planning notes:
   request and should not be stored by the application.
 - Logo upload should support PNG and JPEG/JPG files.
 - SVG logos do not need to be supported.
-- Logo support should probably require or recommend higher error
-  correction, especially Q or H.
-- The app should validate that a logo does not make the QR code
-  unreadable.
+- Logos are allowed only with square modules and error correction level
+  H.
+- A logo must use an opaque white square backing with at least one
+  module
+  of padding on every side.
+- The logo image itself may occupy at most 15% of the QR symbol width,
+  excluding the quiet zone.
+- A logo must be centered and must not overlap any functional module,
+  including finder, separator, timing, alignment, format/version, or
+  dark modules. The app must reject a logo request when no compliant
+  centered area exists.
+- The app must block logo-plus-dot module combinations.
 
 Border types:
 
@@ -398,12 +406,41 @@ Module style planning notes:
   conservative scanner-reliability choice.
 - Dot/circle modules are a visual rendering style for standard Model 2
   QR Code, not a separate QR format.
-- Finder patterns, timing patterns, alignment patterns, and quiet zones
-  should remain conservative even when the data modules use dots.
-- Dot/circle styles should not shrink modules enough to reduce scanner
-  reliability. The app should warn or block unsafe combinations,
-  especially when combined with low contrast, logos, or small output
-  sizes.
+- Square modules may use any supported error correction level, with M as
+  the default.
+- Dot/circle modules require error correction level Q or H, with Q as
+  the default. The UI must not allow L or M while dot/circle modules are
+  selected.
+- Dot/circle modules must have a diameter equal to one module and must
+  not expose a dot-size control.
+- Dot/circle styling applies only to data and error-correction modules.
+  Finder patterns, separators, timing patterns, alignment patterns,
+  format/version information, the dark module, and the quiet zone must
+  remain square and unmodified.
+
+## Scanner-Reliability Constraints
+
+These constraints take precedence over visual customization in the first
+stable release.
+
+- Generate only standard Model 2 QR Code versions 1 through 20. Reject
+  payloads that require versions 21 through 40, and warn when a payload
+  requires version 11 through 20.
+- Render a fixed quiet zone of four light modules on every side. Solid,
+  rounded, caption, and transparent-padding borders must sit outside the
+  quiet zone and must not obscure it.
+- Default to black (`#000000`) foreground on white (`#FFFFFF`)
+  background. Opaque exports require a darker foreground and a WCAG
+  relative-luminance
+  contrast ratio of at least 7:1; reject lower-contrast combinations.
+- Transparent PNG and SVG exports require a foreground relative
+  luminance
+  of at most 0.15 and must show a persistent warning that the final code
+  needs a plain, light, high-contrast background with a clear margin.
+- Raster exports must use an integer scale of at least eight pixels per
+  module, including the quiet zone, and must not resample the final QR
+  image. SVG and PDF exports must preserve whole-module geometry. When a
+  physical size is selected, require at least one millimeter per module.
 
 ## Export Formats
 
@@ -583,6 +620,8 @@ Plain text:
 - Decide max length for UI and generation.
 - Show a warning when text length creates a dense or hard-to-scan QR
   code.
+- Reject content that requires a QR Code version greater than 20, and
+  warn when it requires version 11 through 20.
 
 Future UPC-A:
 
@@ -594,8 +633,9 @@ Future UPC-A:
 
 Colors:
 
-- Ensure sufficient contrast between foreground and background.
-- Warn or block combinations likely to fail scanning.
+- Require a darker foreground, an opaque-export contrast ratio of at
+  least 7:1, and the transparent-export foreground limit defined in the
+  scanner-reliability constraints.
 
 Logo:
 
@@ -604,6 +644,9 @@ Logo:
 - Do not support SVG logos in the first release.
 - Process uploaded logos temporarily and do not persist them after
   generation.
+- Require square modules, error correction level H, a padded opaque
+  white backing, the 15%-width limit, and a compliant centered placement
+  that does not overlap functional modules.
 
 ## Testing And CI
 
@@ -636,6 +679,9 @@ Recommended test layers:
 - Image/export tests that verify PNG, JPG, SVG, and PDF outputs are
   generated, non-empty, and have expected dimensions/content
   characteristics.
+- Scanner-reliability tests that verify quiet-zone and functional-module
+  invariants and successfully decode representative square, dot,
+  transparent, logo, and version-20 exports after rasterization.
 - Accessibility checks for the website UI, especially form labels,
   keyboard navigation, contrast, and dark mode.
 - Docker smoke tests that build the container, start it, and verify the
@@ -670,6 +716,8 @@ Recommended quality gates:
 Testing priorities for the first stable release:
 
 - QR codes should be scanner-reliable for default settings.
+- QR codes should meet the scanner-reliability constraints in Phase 2;
+  unsafe visual-option combinations must be blocked before export.
 - Export files should be valid in all required formats: PNG, JPG, SVG,
   and PDF.
 - Logo upload should be validated and should not persist files.
