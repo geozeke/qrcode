@@ -23,6 +23,9 @@ build-backend = "hatchling.build"
 packages = ["src/qrcode_web"]
 
 [dependency-groups]
+docs = [
+  "zensical>=0.0.51,<0.1",
+]
 dev = [
   "httpx>=0.28,<1",
   "mypy>=1.15,<2",

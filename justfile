@@ -29,6 +29,12 @@ test:
 test-e2e:
     npm --prefix frontend run test:e2e
 
+docs-serve:
+    uv run --group docs zensical serve
+
+docs-build:
+    uv run --group docs zensical build --clean --strict
+
 image:
     docker build --tag qrcode:local .
 
@@ -36,7 +42,7 @@ compose-smoke:
     docker compose up --build --wait
     docker compose down
 
-check: lint typecheck test
+check: lint typecheck test docs-build
 
 outdated:
     uv tree --outdated --depth=1 --all-groups

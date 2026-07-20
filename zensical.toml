@@ -1,0 +1,27 @@
+[project]
+site_name = "QR Code Generator"
+site_url = "https://geozeke.github.io/qrcode/"
+site_description = "Documentation for the self-hosted QR Code Generator"
+site_author = "geozeke"
+repo_url = "https://github.com/geozeke/qrcode"
+repo_name = "geozeke/qrcode"
+edit_uri = "edit/main/docs/"
+docs_dir = "docs"
+site_dir = "site"
+copyright = "Copyright &copy; 2026 QR Code Generator contributors"
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = "getting-started.md" },
+  { "User guide" = "user-guide.md" },
+  { "Deployment" = "deployment.md" },
+  { "Development" = "development.md" },
+]
+
+[project.theme]
+variant = "modern"
+features = [
+  "navigation.instant",
+  "search.highlight",
+  "content.action.edit",
+  "content.action.view",
+]

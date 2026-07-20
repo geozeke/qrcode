@@ -951,10 +951,18 @@ Hosting target:
 
 Documentation target:
 
-- Initial project documentation should live in `README.md`.
-- Keep README-only documentation for the first release. A formal
-  documentation site is a future option only if the project outgrows
-  that workflow; do not plan a GitLab Pages dependency.
+- Keep `README.md` as a concise project entry point with a short quick
+  start and links to the full documentation.
+- Store detailed user, deployment, and contributor documentation as
+  Markdown under `docs/` so it remains useful in a local checkout.
+- Build the documentation with Zensical using a repository-root
+  `zensical.toml` configuration, its modern theme, and a locked
+  development dependency.
+- Publish the strict static Zensical build to
+  `https://geozeke.github.io/qrcode/` through GitHub Actions and GitHub
+  Pages on changes merged to `main`.
+- Do not add documentation versioning for the first release. The site
+  tracks the documentation on `main`.
 
 Maintainer workflow and releases:
 
@@ -1236,7 +1244,8 @@ Future preset direction:
 - Supported border types are quiet-zone only, solid frame, rounded
   frame, label/caption frame, and transparent padding.
 - GitHub Actions is the recommended CI system.
-- Initial documentation should live in `README.md`.
+- Detailed documentation should live as local Markdown under `docs/`,
+  be built with Zensical, and be published through GitHub Pages.
 - Docker Hub is the initial image registry; GHCR is a later dual-publish
   registry, not an immediate replacement.
 - The project should prioritize scan reliability over visual

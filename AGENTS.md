@@ -8,7 +8,8 @@ options, previewing the result, and downloading generated codes.
 
 - `plan/scope.md` is the current source of truth for product scope,
   architecture direction, and accepted decisions.
-- `README.md` is currently only a stub.
+- `README.md` is a concise project entry point. Detailed documentation
+  lives as Markdown in `docs/` and is built with Zensical.
 - Application implementation is underway. Keep changes within the agreed
   scope unless the user explicitly changes it.
 
@@ -43,5 +44,10 @@ options, previewing the result, and downloading generated codes.
   functions.
 - Run Ruff through `uv` for Python code changes when project tooling is
   available.
+- Keep detailed user, deployment, and contributor documentation in
+  `docs/`. Keep `README.md` intentionally concise and link into the
+  documentation site and local Markdown sources.
+- Run `just docs-build` after documentation or Zensical configuration
+  changes. GitHub Pages publishes the strict Zensical build from `main`.
 - When reviewing or changing `.gitignore`, also inspect Git's configured
   global excludes and account for them in recommendations.
