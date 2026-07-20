@@ -19,6 +19,10 @@ Repository status:
 - Resource-limit and privacy hardening is implemented, including bounded
   worker processes, route deadlines, request limits, sanitized errors,
   privacy-safe logging, and response security headers.
+- Frontend refinement and accessibility are implemented, including
+  responsive layouts, persisted dark mode, accessible form feedback,
+  cancellable live previews, exact-state downloads, component tests,
+  automated accessibility checks, and desktop/mobile browser tests.
 
 ## Product Goal
 
