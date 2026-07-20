@@ -523,8 +523,31 @@ Border types:
 
 Border planning notes:
 
-- QR codes require a quiet zone for reliable scanning, so visual border
-  settings must not break scan reliability.
+- Quiet-zone only is the default. It adds no decoration beyond the
+  required four-module quiet zone, and the border-width control is
+  disabled.
+- Solid frame, rounded frame, label/caption frame, and transparent
+  padding support widths of 1, 2, or 4 modules. The default width is
+  2 modules.
+- Frames and captions begin after a fixed two-module outer gap beyond
+  the quiet zone. This gap uses the configured background for opaque
+  exports and remains transparent for transparent PNG/SVG exports.
+- Solid frames use a square-cornered foreground-color rectangle. Rounded
+  frames use the same geometry with an outer corner radius of twice the
+  selected frame width, capped at eight modules.
+- Transparent padding adds only transparent or empty space of the
+  selected width after the outer gap; it draws no frame.
+- Do not offer independent border colors. Frames and caption text use
+  the QR foreground color; opaque panel and gap areas use the QR
+  background color.
+- A label/caption frame is a solid frame with a centered caption band
+  below the symbol. It requires plain-text caption input.
+- Trim caption input, require from 1 through 80 Unicode characters, and
+  escape it for SVG/PDF without interpreting markup.
+- Wrap captions to at most two lines. Use a shared sans-serif style with
+  a minimum 9 pt PDF size and a module-relative digital size. Reject
+  captions that cannot fit within the selected export.
+- The border caption is independent of the optional PDF page caption.
 
 Module style planning notes:
 
@@ -554,7 +577,8 @@ stable release.
   requires version 11 through 20.
 - Render a fixed quiet zone of four light modules on every side. Solid,
   rounded, caption, and transparent-padding borders must sit outside the
-  quiet zone and must not obscure it.
+  quiet zone and must not obscure it. Decorative elements must also
+  remain outside the fixed two-module outer gap.
 - Default to black (`#000000`) foreground on white (`#FFFFFF`)
   background. Opaque exports require a darker foreground and a WCAG
   relative-luminance
@@ -619,6 +643,8 @@ Format-specific behavior:
 - PDF captions are optional and blank by default. Limit captions to 120
   characters, center them below the QR symbol in 12 pt text, and keep at
   least 4 mm between the caption and the quiet zone.
+- Border captions follow the border contract and are independent of the
+  optional PDF page caption.
 
 Transparency and downloads:
 
@@ -899,6 +925,15 @@ Logo:
 - Enforce the configured logo upload, image-size, format-detection,
   decompression-bomb, and metadata-stripping rules.
 
+Border:
+
+- Accept only the configured border types and widths.
+- Require a caption for label/caption frames, enforce its length and
+  text-only rules, and reject captions that cannot fit the selected
+  export.
+- Preserve the required quiet zone and fixed outer gap for every border
+  type and export format.
+
 ## Testing And CI
 
 Hosting target:
@@ -951,6 +986,10 @@ Recommended test layers:
   and 20, PNG/JPG dimensions and modes, SVG vector geometry and embedded
   logos, PDF layout/caption spacing, transparent alpha behavior, and
   opaque JPG/PDF behavior.
+- Border tests that verify every type and width preserves the quiet zone
+  and outer gap, leaves functional modules unchanged, applies
+  transparency correctly, and renders safely escaped, wrapped captions
+  in every format.
 - Scanner-reliability tests that verify quiet-zone and functional-module
   invariants and successfully decode representative square, dot,
   transparent, logo, and version-20 exports after rasterization.
