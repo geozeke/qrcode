@@ -131,6 +131,9 @@ Docker Compose reverse-proxy model:
   persistent volume or database requirement.
 - The Docker health check calls `127.0.0.1:8080/health` with a 30-second
   start period and interval, a 5-second timeout, and three retries.
+- Set Docker Compose limits to one CPU, 512 MiB memory, 128 PIDs,
+  dropped Linux capabilities, `no-new-privileges`, a read-only root
+  filesystem, and a 64 MiB `/tmp` tmpfs.
 
 ## Website Experience
 
@@ -497,6 +500,13 @@ Logo planning notes:
   of padding on every side.
 - The logo image itself may occupy at most 15% of the QR symbol width,
   excluding the quiet zone.
+- A logo upload is limited to 5 MiB, 4,000,000 pixels, and 4,096 pixels
+  in either dimension. It must contain one non-animated PNG or JPEG
+  image.
+- Determine the format by Pillow decoding rather than the filename or
+  declared MIME type. Fully decode accepted images, convert them to RGB
+  or RGBA, and discard EXIF, XMP, ICC, filename, and other source
+  metadata before composition.
 - A logo must be centered and must not overlap any functional module,
   including finder, separator, timing, alignment, format/version, or
   dark modules. The app must reject a logo request when no compliant
@@ -757,6 +767,10 @@ Decision:
   media, `422` for field validation errors, `409` for a state or logo
   mismatch, `410` for an expired token, and a sanitized `500` response
   for unexpected render failures.
+- Use `413` when the request, request JSON, or logo exceeds its
+  configured size limit; `503` with `render_busy` when the render queue
+  is full; and `504` with `render_timeout` when rendering exceeds its
+  time limit.
 - Validation responses use
   `{error, issues: [{path, code, message}]}`.
 - A documented public HTTP API for external automation is a future
@@ -774,6 +788,49 @@ Rationale:
 - Deferring public API support and built-in authentication avoids extra
   first-release work around compatibility, authentication behavior, rate
   limits, and long-term versioning.
+
+## Resource Limits And Privacy
+
+Request and rendering limits:
+
+- Limit every preview and download request to 5 MiB. Limit the JSON
+  `request` part to 16 KiB and the optional logo file to 5 MiB.
+- Configure Pillow's maximum pixel limit to 4,000,000 and treat every
+  decompression-bomb warning as an error.
+- Render in a bounded local worker process pool with at most two
+  concurrent jobs and a queue of four. The stateless workers do not
+  require network access beyond the container's existing network
+  configuration.
+- Limit previews to 5 seconds and downloads to 15 seconds. Cancel and
+  terminate timed-out worker work.
+- A timed-out worker is disposable because rendering is stateless and
+  does not write persistent data.
+
+Reverse-proxy limits:
+
+- The documented reverse-proxy configuration must enforce the same 5 MiB
+  request limit.
+- The proxy must limit each client to 120 preview requests per minute
+  with a burst of 20, and 30 download requests per minute with a burst
+  of 5.
+- These proxy controls are defense in depth. The application does not
+  use forwarded headers to identify clients.
+
+Privacy and logging:
+
+- Send `Cache-Control: no-store` on preview and download responses.
+- Do not use analytics, request-body logging, or persistent
+  error-reporting services in the first release.
+- Application logs may contain only timestamp, a generated request ID,
+  route, status, duration, response size, and stable error code.
+- Logs and HTTP responses must never contain request bodies, headers,
+  payload data, WiFi credentials, logo bytes or filename, render tokens,
+  canonical fingerprints, or stack traces.
+- Generate a server-side opaque request ID and return it in an error
+  header. Keep detailed exception data only in process-local
+  diagnostics, not logs or HTTP responses.
+- Process logos in memory when possible. Otherwise use the container
+  tmpfs and `finally` cleanup. Never persist or serve uploads.
 
 ## Validation Rules To Define
 
@@ -839,6 +896,8 @@ Logo:
 - Require square modules, error correction level H, a padded opaque
   white backing, the 15%-width limit, and a compliant centered placement
   that does not overlap functional modules.
+- Enforce the configured logo upload, image-size, format-detection,
+  decompression-bomb, and metadata-stripping rules.
 
 ## Testing And CI
 
@@ -872,6 +931,11 @@ Recommended test layers:
   request, reject altered state or logo bytes, reject expired or
   tampered tokens, verify validation error responses, and verify
   no-store previews.
+- Resource-limit tests for oversized or chunked requests, forged MIME
+  types, malformed images, animation, decompression bombs, queue
+  saturation, and preview/download timeouts.
+- Privacy tests that verify logs and error responses exclude payload
+  data, WiFi passwords, logo filenames, tokens, and stack traces.
 - Frontend unit/component tests for form behavior, validation states,
   option selection, dark mode, and download controls.
 - End-to-end browser tests for the main user flows: generate URL QR
@@ -898,6 +962,8 @@ Recommended test layers:
   reaches healthy status.
 - Docker/reverse-proxy tests that verify loopback-only publication and
   optional shared-network connectivity.
+- Reverse-proxy configuration tests that verify its request-size and
+  rate-limit settings match the application policy.
 - Local Ubuntu VM Compose checks during development to reproduce and
   debug Dockerfile, health check, and Linux runtime behavior.
 
