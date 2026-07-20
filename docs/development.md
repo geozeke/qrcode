@@ -38,16 +38,15 @@ and build outputs while preserving installed environments. `just reset`
 additionally removes `.venv`, frontend `node_modules`, and the setup
 marker.
 
-Run the backend and frontend development servers in separate terminals:
+Start the backend and frontend development servers together:
 
 ```console
-QR_RENDER_TOKEN_SECRET="replace-with-at-least-32-random-bytes" \
-  uv run uvicorn qrcode_web.app:create_app --factory --reload
+just run
 ```
 
-```console
-npm --prefix frontend run dev
-```
+The recipe generates an ephemeral render-token secret unless
+`QR_RENDER_TOKEN_SECRET` is already set, waits for the backend to become
+healthy, and then starts Vite. Press Ctrl+C to stop both servers.
 
 The frontend development server proxies `/api` and `/health` to the
 backend on port 8080.

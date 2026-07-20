@@ -75,6 +75,10 @@ sync: _require_setup
     uv sync --frozen --all-groups
     npm --prefix frontend ci --no-fund
 
+# Start the backend and frontend development servers
+run: _require_setup
+    bash scripts/run_dev.sh
+
 # Check Python and frontend linting and Python formatting
 lint:
     uv run ruff check .
