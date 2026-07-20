@@ -1,0 +1,10 @@
+import App from './App.svelte';
+import './styles.css';
+
+const target = document.getElementById('app');
+
+if (!target) {
+  throw new Error('Application root is missing.');
+}
+
+new App({ target });

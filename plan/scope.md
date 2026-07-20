@@ -4,11 +4,9 @@ Last updated: 2026-07-20
 
 ## Project State
 
-This project is in planning only. No application code should be written
-until the planning scope is agreed.
-
-The only intended artifact at this stage is this document:
-`./plan/scope.md`.
+Planning decisions for the first release are agreed, and implementation
+is underway. This document remains the source of truth for accepted
+product scope and architecture.
 
 Repository status:
 
@@ -16,6 +14,11 @@ Repository status:
 - The current branch is `main`.
 - The origin remote is `git@github.com:geozeke/qrcode.git`.
 - The repository has been pushed to origin.
+- Backend, frontend, container, and test scaffolding now exists locally.
+- Payload, visual, logo, and export rendering are implemented.
+- Resource-limit and privacy hardening is implemented, including bounded
+  worker processes, route deadlines, request limits, sanitized errors,
+  privacy-safe logging, and response security headers.
 
 ## Product Goal
 

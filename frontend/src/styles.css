@@ -1,0 +1,132 @@
+:root {
+  color: #1d1d1f;
+  background: #ffffff;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f6f7f9;
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+header,
+.workspace {
+  display: flex;
+  gap: 1.5rem;
+}
+
+header {
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1.5rem;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+}
+
+.workspace {
+  align-items: start;
+}
+
+.panel {
+  flex: 1;
+  padding: 1.5rem;
+  border: 1px solid #d7dbe0;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea,
+button {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #87919c;
+  border-radius: 0.4rem;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+}
+
+.checkbox {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.checkbox input {
+  width: auto;
+}
+
+button {
+  border-color: #0747a6;
+  color: #fff;
+  background: #0747a6;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button.secondary {
+  width: auto;
+  color: #0747a6;
+  background: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.preview-panel {
+  display: grid;
+  place-items: center;
+  min-height: 22rem;
+}
+
+.preview-panel h2,
+.preview-panel button,
+.preview-panel p {
+  justify-self: stretch;
+}
+
+.preview-panel img {
+  width: min(100%, 24rem);
+  image-rendering: pixelated;
+}
+
+.issue {
+  color: #9f1c1c;
+  font-weight: 600;
+}
+
+@media (max-width: 44rem) {
+  header,
+  .workspace {
+    flex-direction: column;
+  }
+
+  .panel {
+    width: 100%;
+  }
+}

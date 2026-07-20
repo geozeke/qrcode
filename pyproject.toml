@@ -1,0 +1,60 @@
+[project]
+name = "qrcode-web"
+version = "0.1.0"
+description = "Self-hosted QR code generator web application"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+  "anyio>=4.9,<5",
+  "fastapi>=0.115,<1",
+  "pillow>=12.0,<13",
+  "python-multipart>=0.0.20,<1",
+  "reportlab>=4.4,<5",
+  "segno>=1.6.6,<2",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qrcode_web"]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.28,<1",
+  "mypy>=1.15,<2",
+  "pypdf>=6,<7",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6.0,<7",
+  "ruff>=0.11,<1",
+  "types-reportlab>=4.4,<5",
+  "zxing-cpp>=2.3,<3",
+]
+
+[tool.uv]
+cache-dir = ".uv-cache"
+python-preference = "only-managed"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "DOC"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]

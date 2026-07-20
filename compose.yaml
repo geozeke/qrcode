@@ -1,0 +1,25 @@
+services:
+  qrcode:
+    build: .
+    image: ${QR_IMAGE:-qrcode:local}
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      QR_RENDER_TOKEN_SECRET: ${QR_RENDER_TOKEN_SECRET:?Set a random secret of at least 32 bytes}
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
