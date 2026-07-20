@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 NAME = re.compile(r"^[A-Za-z0-9_.-]+")
 APPROVED = {
     "Apache-2.0",
+    "Apache-2.0 OR MIT",
     "BSD-2-Clause",
     "BSD-3-Clause",
     "MIT",
@@ -45,6 +46,9 @@ def main() -> None:
 
     dockerfile = (ROOT / "Dockerfile").read_text()
     container_dependencies = set(re.findall(r"(?m)^FROM\s+(\S+)", dockerfile))
+    tool_dependencies = set(
+        re.findall(r'"([A-Za-z0-9_.-]+)==\$\{[A-Z0-9_]+\}"', dockerfile)
+    )
     for compose_file in ROOT.glob("compose*.yaml"):
         for image in re.findall(r"(?m)^\s+image:\s+([^\s]+)", compose_file.read_text()):
             if not image.startswith("${"):
@@ -66,12 +70,14 @@ def main() -> None:
     recorded_python = set(inventory["python"])
     recorded_javascript = set(inventory["javascript"])
     recorded_containers = set(inventory["containers"])
+    recorded_tools = set(inventory["tools"])
     recorded_actions = set(inventory["actions"])
     problems: list[str] = []
     for ecosystem, expected, recorded in (
         ("Python", python_dependencies, recorded_python),
         ("JavaScript", javascript_dependencies, recorded_javascript),
         ("Container", container_dependencies, recorded_containers),
+        ("Tool", tool_dependencies, recorded_tools),
         ("GitHub Actions", action_dependencies, recorded_actions),
     ):
         if missing := sorted(expected - recorded):
@@ -80,7 +86,7 @@ def main() -> None:
             )
         if extra := sorted(recorded - expected):
             problems.append(f"Stale {ecosystem} license records: {extra}")
-    for ecosystem in ("python", "javascript", "containers", "actions"):
+    for ecosystem in ("python", "javascript", "containers", "tools", "actions"):
         for dependency, license_name in inventory[ecosystem].items():
             if license_name not in APPROVED:
                 problems.append(

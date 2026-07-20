@@ -8,11 +8,12 @@ services:
 
   proxy:
     image: nginx:1.29-alpine
+    user: "101:101"
     depends_on:
       qrcode:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8081:8080"
+      - "127.0.0.1:${QR_PROXY_HOST_PORT:-8081}:8080"
     networks:
       - proxy
       - public
@@ -21,8 +22,8 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777
-      - /var/cache/nginx:size=16m,mode=0755
-      - /var/run:size=1m,mode=0755
+      - /var/cache/nginx:size=16m,mode=0755,uid=101,gid=101
+      - /var/run:size=1m,mode=0755,uid=101,gid=101
     cap_drop:
       - ALL
     security_opt:

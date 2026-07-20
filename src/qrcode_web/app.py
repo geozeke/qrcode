@@ -457,7 +457,12 @@ def create_app() -> FastAPI:
             },
         )
 
-    web_root = Path(__file__).resolve().parents[2] / "web"
+    configured_web_root = os.environ.get("QR_WEB_ROOT")
+    web_root = (
+        Path(configured_web_root)
+        if configured_web_root
+        else Path(__file__).resolve().parents[2] / "web"
+    )
     if web_root.is_dir():
         assets_path = web_root / "assets"
         if assets_path.is_dir():

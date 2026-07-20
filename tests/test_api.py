@@ -4,12 +4,34 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
+from pathlib import Path
 from xml.etree import ElementTree
 
 from fastapi.testclient import TestClient
 from PIL import Image
 
 from qrcode_web.app import create_app
+
+
+def test_configured_web_root_serves_packaged_frontend(
+    monkeypatch: object, tmp_path: Path
+) -> None:
+    """The deployment web-root setting serves the packaged SPA.
+
+    Parameters
+    ----------
+    monkeypatch : object
+        Pytest environment patch fixture.
+    tmp_path : Path
+        Temporary frontend asset directory.
+    """
+    (tmp_path / "index.html").write_text("<h1>Packaged QR frontend</h1>")
+    monkeypatch.setenv("QR_RENDER_TOKEN_SECRET", "a" * 32)  # type: ignore[attr-defined]
+    monkeypatch.setenv("QR_WEB_ROOT", str(tmp_path))  # type: ignore[attr-defined]
+    with TestClient(create_app()) as client:
+        response = client.get("/")
+    assert response.status_code == 200
+    assert "Packaged QR frontend" in response.text
 
 
 def _request(output_format: str = "png") -> str:

@@ -24,9 +24,10 @@ Repository status:
   cancellable live previews, exact-state downloads, component tests,
   automated accessibility checks, and desktop/mobile browser tests.
 - CI and deployment automation are implemented, including matching
-  quality gates, Docker and reverse-proxy smoke tests, dependency and
-  container scanning, Dependabot configuration, direct-license policy
-  checks, and validated multi-architecture Docker Hub publishing.
+  quality gates, on-host Docker and reverse-proxy deployment tests,
+  dependency and container scanning, Dependabot configuration,
+  direct-license policy checks, and validated multi-architecture Docker
+  Hub publishing.
 
 ## Product Goal
 

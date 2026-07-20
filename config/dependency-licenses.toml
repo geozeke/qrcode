@@ -43,6 +43,9 @@ vitest = "MIT"
 "node:22-alpine" = "MIT"
 "python:3.12-slim" = "PSF-2.0"
 
+[tools]
+uv = "Apache-2.0 OR MIT"
+
 [actions]
 "actions/checkout" = "MIT"
 "actions/configure-pages" = "MIT"

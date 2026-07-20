@@ -10,7 +10,7 @@ The default Compose port mapping is:
 
 ```yaml
 ports:
-  - "127.0.0.1:8080:8080"
+  - "127.0.0.1:${QR_HOST_PORT:-8080}:8080"
 ```
 
 This is appropriate when the reverse proxy runs directly on the Docker
@@ -31,6 +31,9 @@ publicly.
 
 The proxy override relies on Compose's `!reset` merge tag, so use a
 current Docker Compose release.
+
+`QR_HOST_PORT` and `QR_PROXY_HOST_PORT` can override the default host
+ports without changing the tracked Compose files.
 
 ## Proxy safeguards
 

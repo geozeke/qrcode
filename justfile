@@ -49,6 +49,9 @@ proxy-smoke:
     docker build --tag qrcode:local .
     QR_IMAGE=qrcode:local bash scripts/proxy_smoke.sh
 
+deployment-test:
+    bash scripts/deployment_test.sh
+
 check: lint typecheck test docs-build licenses
 
 outdated:

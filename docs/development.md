@@ -6,7 +6,16 @@
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 22 with npm
 - `just`
-- Docker for container checks
+- Docker Engine
+- A current Docker Compose release, available as either `docker compose`
+  or `docker-compose`
+
+Verify the container tooling before running deployment tests:
+
+```console
+docker info
+docker compose version  # or: docker-compose version
+```
 
 ## Set up
 
@@ -35,18 +44,29 @@ just check
 just test-e2e
 ```
 
-Docker and proxy smoke tests are separate because they require Docker
-Engine:
+Run the complete on-host deployment gate with:
+
+```console
+just deployment-test
+```
+
+This builds the production image and runs both the application and proxy
+deployment suites against the host Docker Engine. The scripts accept
+either the `docker compose` plugin form or the standalone
+`docker-compose` command. The image installs pinned `uv` tooling and
+syncs its production environment from `uv.lock` with Python 3.12.
+Individual suites remain available with:
 
 ```console
 just compose-smoke
 just proxy-smoke
 ```
 
-The first command verifies health, the packaged frontend, the non-root
-runtime user, read-only root filesystem, and graceful shutdown. The
-second verifies private application networking plus the documented
-request-size and rate-limit configuration.
+The application suite verifies health, a real preview/download cycle,
+the packaged frontend, loopback binding, OCI metadata, resource limits,
+the non-root runtime user, read-only root filesystem, and graceful
+shutdown. The proxy suite verifies private application networking plus
+loopback binding and the documented request-size and rate limits.
 
 ## Documentation
 
@@ -68,10 +88,12 @@ committed.
 
 ## Continuous integration
 
-Pull requests run formatting, linting, type checks, backend and frontend
-tests, strict documentation builds, direct-dependency license policy
-checks, and a production image build. Pushes to `main` additionally run
-desktop/mobile browser tests and both Compose smoke suites.
+Pull requests and pushes to `main` run formatting, linting, type checks,
+backend and frontend tests, strict documentation builds,
+direct-dependency license policy checks, and the complete on-host Docker
+deployment gate. Pushes to `main` additionally run desktop/mobile
+browser tests. Release tags rerun the deployment gate against the exact
+release candidate before publishing images.
 
 A weekly security workflow runs Python and npm dependency audits,
 CodeQL analysis, repository scanning, and the license inventory check.
