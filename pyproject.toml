@@ -3,8 +3,22 @@ name = "qrcode-web"
 version = "0.1.0"
 description = "Self-hosted QR code generator web application"
 readme = "README.md"
+authors = [{ name = "Peter Nardi" }]
 requires-python = ">=3.12"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["docker", "fastapi", "qr-code", "self-hosted", "svelte"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "Framework :: FastAPI",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: System Administrators",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Graphics",
+]
 dependencies = [
   "anyio>=4.9,<5",
   "fastapi>=0.115,<1",
@@ -14,6 +28,11 @@ dependencies = [
   "segno>=1.6.6,<2",
   "uvicorn[standard]>=0.34,<1",
 ]
+
+[project.urls]
+Documentation = "https://geozeke.github.io/qrcode/"
+Issues = "https://github.com/geozeke/qrcode/issues"
+Repository = "https://github.com/geozeke/qrcode"
 
 [build-system]
 requires = ["hatchling>=1.27,<2"]

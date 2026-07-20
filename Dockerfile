@@ -21,7 +21,7 @@ RUN groupadd --gid 10001 qrcode \
     && useradd --uid 10001 --gid qrcode --create-home qrcode
 RUN pip install --no-cache-dir "uv==${UV_VERSION}"
 
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src/ ./src/
 RUN UV_NO_CACHE=1 UV_PYTHON_DOWNLOADS=never \
     uv sync --locked --no-dev --no-editable --python /usr/local/bin/python3.12

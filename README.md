@@ -34,3 +34,7 @@ just docs-serve
 
 See the [development guide](docs/development.md) for the complete local
 workflow.
+
+## License
+
+QR Code Generator is available under the [MIT License](LICENSE).

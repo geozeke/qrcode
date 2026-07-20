@@ -2,13 +2,13 @@
 site_name = "QR Code Generator"
 site_url = "https://geozeke.github.io/qrcode/"
 site_description = "Documentation for the self-hosted QR Code Generator"
-site_author = "geozeke"
+site_author = "Peter Nardi"
 repo_url = "https://github.com/geozeke/qrcode"
 repo_name = "geozeke/qrcode"
 edit_uri = "edit/main/docs/"
 docs_dir = "docs"
 site_dir = "site"
-copyright = "Copyright &copy; 2026 QR Code Generator contributors"
+copyright = "Copyright &copy; 2026 Peter Nardi and contributors"
 nav = [
   { "Home" = "index.md" },
   { "Getting started" = "getting-started.md" },
