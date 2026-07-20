@@ -41,6 +41,8 @@ Primary deployment target:
   app container unless a later technical constraint requires otherwise.
 - Persistent storage is not required for the first release because the
   app is stateless.
+- The first release should use a reverse proxy as the documented and
+  recommended public-access path.
 
 Deployment options still to discuss:
 
@@ -61,6 +63,12 @@ Access model:
   or reverse proxy controls when needed.
 - Reverse proxy authentication is a future deployment capability, not a
   first-release requirement.
+- The reverse proxy should provide public TLS termination, host routing,
+  and any deployer-selected access control. The application must not
+  configure, bundle, or implement reverse-proxy authentication.
+- The application does not need to generate absolute URLs or consume
+  forwarded headers in the first release. Do not trust forwarded or
+  identity headers in the application.
 
 Container health monitoring:
 
@@ -78,6 +86,51 @@ Container health monitoring:
   database.
 - Deployment documentation should show how to inspect health status with
   `docker compose ps`.
+
+## Container Runtime And Web Serving
+
+Decision:
+
+- Build SvelteKit as a static single-page application with an SPA
+  fallback; do not use server-side rendering in the first release.
+- Build frontend assets in a Node build stage, then copy only the static
+  output into the Python runtime image. Do not ship Node or frontend
+  source in the final image.
+- Serve static assets and the SPA fallback through FastAPI/Starlette in
+  the same Uvicorn process as the internal API.
+- Reserve `/api/*` and `/health` for FastAPI. Other non-asset GET routes
+  return the SPA entry document.
+- Run a single Uvicorn process as a dedicated non-root user, bound to
+  `0.0.0.0:8080`. Require `QR_RENDER_TOKEN_SECRET`; allow `PORT` with
+  `8080` as its default.
+- The frontend uses relative `/api/...` URLs. Do not enable CORS or
+  require runtime frontend configuration.
+- Run the container with a read-only root filesystem and use a writable
+  temporary directory only when an image library requires it.
+- On `SIGTERM`, stop accepting new requests, allow up to 30 seconds for
+  in-flight work, then exit.
+
+Caching and security headers:
+
+- Cache fingerprinted frontend assets for one year and send `no-cache`
+  for the SPA entry document. Preserve `no-store` behavior for API
+  previews and render-token responses.
+- Set `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+  and a same-origin Content Security Policy that allows only required
+  `data:` and `blob:` image sources.
+
+Docker Compose reverse-proxy model:
+
+- The primary Compose file publishes `127.0.0.1:8080:8080`, limiting
+  application access to host loopback for host-installed reverse
+  proxies.
+- Document an optional Compose override for containerized reverse
+  proxies: attach the application to the proxy's private Docker network,
+  remove the host port publication, and proxy to `qrcode:8080`.
+- Use `init: true` in Docker Compose. The application service has no
+  persistent volume or database requirement.
+- The Docker health check calls `127.0.0.1:8080/health` with a 30-second
+  start period and interval, a 5-second timeout, and three retries.
 
 ## Website Experience
 
@@ -221,6 +274,8 @@ Validation targets:
 - Validate the production image's health check, runtime user, network
   binding, packaged frontend assets, port mapping, and graceful shutdown
   through Docker Compose in the Ubuntu VM.
+- Validate loopback-only host publication and optional private Docker
+  network connectivity to a containerized reverse proxy.
 - Keep the `Dockerfile` and Compose configuration portable so they also
   work in CI and other standard Docker Engine environments.
 
@@ -841,6 +896,8 @@ Recommended test layers:
   web server responds.
 - Docker health smoke tests that start the container and verify it
   reaches healthy status.
+- Docker/reverse-proxy tests that verify loopback-only publication and
+  optional shared-network connectivity.
 - Local Ubuntu VM Compose checks during development to reproduce and
   debug Dockerfile, health check, and Linux runtime behavior.
 
