@@ -1,13 +1,20 @@
 # Development
 
-## Requirements
+## Required developer dependencies
 
+Install all of these tools before running the project setup:
+
+- Git
+- Bash
+- [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`)
 - Python 3.12
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 22.13 or newer with npm (Node.js 23 is not supported)
-- `just`
-- [git-cliff](https://git-cliff.org/) for changelog and release
-  preparation
+- [just](https://just.systems/)
+- [git-cliff](https://git-cliff.org/), required by `just changelog` and
+  the release-preparation workflow
+- curl, used by the Docker deployment smoke tests
+- OpenSSL, used to generate secrets for Docker Compose deployments
 - Docker Engine
 - A current Docker Compose release, available as either `docker compose`
   or `docker-compose`
