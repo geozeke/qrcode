@@ -1,7 +1,7 @@
 {
   "name": "qrcode-web-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Frontend for the self-hosted QR Code Generator",
   "license": "MIT",
   "author": "Peter Nardi",
