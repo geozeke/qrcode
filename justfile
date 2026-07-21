@@ -113,7 +113,7 @@ changelog:
     fi
     git-cliff --unreleased
 
-# Report compatible outdated top-level Python and frontend dependencies
+# Report compatible and range-blocked direct dependency updates
 stale:
     bash scripts/stale_dependencies.sh
 

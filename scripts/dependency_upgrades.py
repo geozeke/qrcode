@@ -5,6 +5,8 @@ Functions
 ---------
 direct_python_dependencies
     Read direct Python dependency names from project metadata.
+direct_build_system_dependencies
+    Read direct Python build-system requirements from project metadata.
 direct_javascript_dependencies
     Read direct JavaScript dependency names from package metadata.
 outdated_dependencies
@@ -27,7 +29,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 COMMIT_SUBJECT = "build(deps): upgrade direct dependencies"
@@ -54,6 +56,8 @@ class OutdatedDependency:
         Newest version allowed by the declared constraint, when known.
     latest
         Latest version published by the package registry.
+    constraint
+        Declared manifest constraint, when available.
     """
 
     ecosystem: str
@@ -61,6 +65,7 @@ class OutdatedDependency:
     current: str
     wanted: str
     latest: str
+    constraint: str = ""
 
 
 @dataclass(frozen=True)
@@ -125,6 +130,87 @@ def requirement_name(requirement: str) -> str:
     return match.group(1)
 
 
+def requirement_constraint(requirement: str) -> str:
+    """Extract the version constraint from a PEP 508 requirement.
+
+    Parameters
+    ----------
+    requirement
+        PEP 508 dependency requirement.
+
+    Returns
+    -------
+    str
+        Declared version constraint without markers.
+    """
+    match = REQUIREMENT_NAME_RE.match(requirement)
+    if not match:
+        raise ValueError(f"Could not parse dependency constraint from {requirement!r}")
+    remainder = requirement[match.end() :].lstrip()
+    if remainder.startswith("["):
+        closing_bracket = remainder.find("]")
+        if closing_bracket == -1:
+            raise ValueError(f"Could not parse dependency extras from {requirement!r}")
+        remainder = remainder[closing_bracket + 1 :].lstrip()
+    return remainder.split(";", maxsplit=1)[0].strip()
+
+
+def direct_python_requirements(pyproject_path: Path) -> dict[str, tuple[str, str]]:
+    """Read direct runtime and dependency-group requirements.
+
+    Parameters
+    ----------
+    pyproject_path
+        Project metadata path.
+
+    Returns
+    -------
+    dict[str, tuple[str, str]]
+        Normalized names mapped to declared names and constraints.
+    """
+    metadata = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    requirements = list(metadata.get("project", {}).get("dependencies", []))
+    for group in metadata.get("dependency-groups", {}).values():
+        requirements.extend(group)
+
+    dependencies: dict[str, tuple[str, str]] = {}
+    for value in requirements:
+        requirement = str(value)
+        name = requirement_name(requirement)
+        dependencies.setdefault(
+            normalize_python_name(name),
+            (name, requirement_constraint(requirement)),
+        )
+    return dependencies
+
+
+def direct_build_system_dependencies(
+    pyproject_path: Path,
+) -> dict[str, tuple[str, str]]:
+    """Read direct Python build-system requirements.
+
+    Parameters
+    ----------
+    pyproject_path
+        Project metadata path.
+
+    Returns
+    -------
+    dict[str, tuple[str, str]]
+        Normalized names mapped to complete requirements and constraints.
+    """
+    metadata = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    dependencies: dict[str, tuple[str, str]] = {}
+    for value in metadata.get("build-system", {}).get("requires", []):
+        requirement = str(value)
+        name = requirement_name(requirement)
+        dependencies.setdefault(
+            normalize_python_name(name),
+            (requirement, requirement_constraint(requirement)),
+        )
+    return dependencies
+
+
 def direct_python_dependencies(pyproject_path: Path) -> dict[str, str]:
     """Read direct runtime and dependency-group package names.
 
@@ -138,15 +224,32 @@ def direct_python_dependencies(pyproject_path: Path) -> dict[str, str]:
     dict[str, str]
         Normalized names mapped to their declared spelling.
     """
-    metadata = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    requirements = list(metadata.get("project", {}).get("dependencies", []))
-    for group in metadata.get("dependency-groups", {}).values():
-        requirements.extend(group)
+    return {
+        normalized_name: name
+        for normalized_name, (name, _constraint) in direct_python_requirements(
+            pyproject_path
+        ).items()
+    }
 
-    dependencies: dict[str, str] = {}
-    for requirement in requirements:
-        name = requirement_name(str(requirement))
-        dependencies.setdefault(normalize_python_name(name), name)
+
+def direct_javascript_requirements(package_path: Path) -> dict[str, tuple[str, str]]:
+    """Read direct JavaScript dependency names and constraints.
+
+    Parameters
+    ----------
+    package_path
+        npm package metadata path.
+
+    Returns
+    -------
+    dict[str, tuple[str, str]]
+        Dependency names mapped to declared names and constraints.
+    """
+    metadata = json.loads(package_path.read_text(encoding="utf-8"))
+    dependencies: dict[str, tuple[str, str]] = {}
+    for field in ("dependencies", "devDependencies", "optionalDependencies"):
+        for name, constraint in metadata.get(field, {}).items():
+            dependencies.setdefault(name, (name, str(constraint)))
     return dependencies
 
 
@@ -163,12 +266,12 @@ def direct_javascript_dependencies(package_path: Path) -> dict[str, str]:
     dict[str, str]
         Dependency names mapped to their declared spelling.
     """
-    metadata = json.loads(package_path.read_text(encoding="utf-8"))
-    dependencies: dict[str, str] = {}
-    for field in ("dependencies", "devDependencies", "optionalDependencies"):
-        for name in metadata.get(field, {}):
-            dependencies.setdefault(name, name)
-    return dependencies
+    return {
+        name: display_name
+        for name, (display_name, _constraint) in direct_javascript_requirements(
+            package_path
+        ).items()
+    }
 
 
 def resolve_compatible_python_lock(
@@ -219,8 +322,96 @@ def resolve_compatible_python_lock(
         shutil.copy2(temporary_lock, output_path)
 
 
+def resolve_standalone_requirement(requirement: str, requires_python: str) -> str:
+    """Resolve one requirement independently to its newest available version.
+
+    Parameters
+    ----------
+    requirement
+        Requirement to resolve.
+    requires_python
+        Python compatibility constraint for the synthetic project.
+
+    Returns
+    -------
+    str
+        Resolved distribution version.
+
+    Raises
+    ------
+    RuntimeError
+        If the resolved lockfile does not contain the requested distribution.
+    subprocess.CalledProcessError
+        If uv cannot resolve the requirement.
+    """
+    name = normalize_python_name(requirement_name(requirement))
+    with tempfile.TemporaryDirectory(prefix="qrcode-uv-requirement-") as directory:
+        project_directory = Path(directory)
+        pyproject_path = project_directory / "pyproject.toml"
+        pyproject_path.write_text(
+            "\n".join(
+                (
+                    "[project]",
+                    'name = "qrcode-requirement-check"',
+                    'version = "0"',
+                    f"requires-python = {json.dumps(requires_python)}",
+                    f"dependencies = [{json.dumps(requirement)}]",
+                    "",
+                )
+            ),
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["uv", "lock", "--quiet", "--project", str(project_directory)],
+            check=True,
+        )
+        versions = locked_python_versions(project_directory / "uv.lock")
+    if name not in versions:
+        raise RuntimeError(f"Resolved lockfile does not contain {name}")
+    return versions[name]
+
+
+def resolve_build_system_outdated(
+    pyproject_path: Path,
+) -> list[OutdatedDependency]:
+    """Resolve build requirements whose latest release exceeds their range.
+
+    Parameters
+    ----------
+    pyproject_path
+        Project metadata path.
+
+    Returns
+    -------
+    list[OutdatedDependency]
+        Build requirements with a release outside the declared constraint.
+    """
+    metadata = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    requires_python = str(metadata.get("project", {}).get("requires-python", ""))
+    dependencies = direct_build_system_dependencies(pyproject_path)
+    outdated: list[OutdatedDependency] = []
+    for normalized_name, (requirement, constraint) in dependencies.items():
+        wanted = resolve_standalone_requirement(requirement, requires_python)
+        latest = resolve_standalone_requirement(normalized_name, requires_python)
+        if wanted == latest:
+            continue
+        outdated.append(
+            OutdatedDependency(
+                ecosystem="Python",
+                name=requirement_name(requirement),
+                current=wanted,
+                wanted=wanted,
+                latest=latest,
+                constraint=constraint,
+            )
+        )
+    return outdated
+
+
 def parse_uv_outdated(
-    dependencies: dict[str, str], tree_output: str
+    dependencies: dict[str, str],
+    tree_output: str,
+    constraints: dict[str, str] | None = None,
 ) -> list[OutdatedDependency]:
     """Parse outdated direct Python dependencies from ``uv tree``.
 
@@ -230,6 +421,8 @@ def parse_uv_outdated(
         Normalized direct dependency names and display names.
     tree_output
         Output from ``uv tree --outdated --depth=1``.
+    constraints
+        Optional manifest constraints keyed by normalized name.
 
     Returns
     -------
@@ -253,13 +446,16 @@ def parse_uv_outdated(
                 current=match.group("current"),
                 wanted=match.group("latest"),
                 latest=match.group("latest"),
+                constraint=(constraints or {}).get(normalized_name, ""),
             )
         )
     return outdated
 
 
 def parse_npm_outdated(
-    dependencies: dict[str, str], outdated_output: str
+    dependencies: dict[str, str],
+    outdated_output: str,
+    constraints: dict[str, str] | None = None,
 ) -> list[OutdatedDependency]:
     """Parse outdated direct JavaScript dependencies from npm JSON.
 
@@ -269,6 +465,8 @@ def parse_npm_outdated(
         Direct dependency names and display names.
     outdated_output
         JSON output from ``npm outdated``.
+    constraints
+        Optional manifest constraints keyed by dependency name.
 
     Returns
     -------
@@ -297,6 +495,7 @@ def parse_npm_outdated(
                 current=current,
                 wanted=wanted,
                 latest=latest,
+                constraint=(constraints or {}).get(name, ""),
             )
         )
     return outdated
@@ -323,11 +522,11 @@ def compatible_python_dependencies(
     list[OutdatedDependency]
         Direct Python dependencies whose resolved version changes.
     """
-    dependencies = direct_python_dependencies(pyproject_path)
+    requirements = direct_python_requirements(pyproject_path)
     current_versions = locked_python_versions(current_lock_path)
     candidate_versions = locked_python_versions(candidate_lock_path)
     outdated: list[OutdatedDependency] = []
-    for normalized_name, display_name in dependencies.items():
+    for normalized_name, (display_name, constraint) in requirements.items():
         current = current_versions.get(normalized_name)
         candidate = candidate_versions.get(normalized_name)
         if current and candidate and current != candidate:
@@ -338,9 +537,61 @@ def compatible_python_dependencies(
                     current=current,
                     wanted=candidate,
                     latest=candidate,
+                    constraint=constraint,
                 )
             )
     return outdated
+
+
+def combine_python_outdated(
+    compatible: list[OutdatedDependency],
+    latest: list[OutdatedDependency],
+) -> list[OutdatedDependency]:
+    """Combine compatible Python resolutions with registry latest versions.
+
+    Parameters
+    ----------
+    compatible
+        Direct dependencies changed by the constrained resolver.
+    latest
+        Direct dependencies reported as outdated by the registry lookup.
+
+    Returns
+    -------
+    list[OutdatedDependency]
+        Direct dependencies with current, wanted, and latest versions.
+    """
+    compatible_by_name = {normalize_python_name(item.name): item for item in compatible}
+    combined: list[OutdatedDependency] = []
+    seen: set[str] = set()
+    for latest_item in latest:
+        normalized_name = normalize_python_name(latest_item.name)
+        compatible_item = compatible_by_name.get(normalized_name)
+        combined.append(
+            OutdatedDependency(
+                ecosystem="Python",
+                name=latest_item.name,
+                current=latest_item.current,
+                wanted=(
+                    compatible_item.wanted
+                    if compatible_item is not None
+                    else latest_item.current
+                ),
+                latest=latest_item.latest,
+                constraint=(
+                    compatible_item.constraint
+                    if compatible_item is not None
+                    else latest_item.constraint
+                ),
+            )
+        )
+        seen.add(normalized_name)
+    combined.extend(
+        item
+        for normalized_name, item in compatible_by_name.items()
+        if normalized_name not in seen
+    )
+    return combined
 
 
 def outdated_dependencies(
@@ -349,6 +600,8 @@ def outdated_dependencies(
     uv_lock_path: Path,
     candidate_uv_lock_path: Path,
     npm_outdated_path: Path,
+    uv_tree_path: Path | None = None,
+    build_system_outdated_path: Path | None = None,
 ) -> list[OutdatedDependency]:
     """Return outdated direct dependencies from both ecosystems.
 
@@ -364,20 +617,67 @@ def outdated_dependencies(
         Candidate lockfile resolved with direct upgrades.
     npm_outdated_path
         Captured ``npm outdated --json`` output.
+    uv_tree_path
+        Optional captured ``uv tree --outdated`` output.
+    build_system_outdated_path
+        Optional captured build-system update metadata.
 
     Returns
     -------
     list[OutdatedDependency]
         Python dependencies followed by JavaScript dependencies.
     """
-    javascript_dependencies = direct_javascript_dependencies(package_path)
+    python_requirements = direct_python_requirements(pyproject_path)
+    compatible_python = compatible_python_dependencies(
+        pyproject_path, uv_lock_path, candidate_uv_lock_path
+    )
+    if uv_tree_path is None:
+        python_outdated = compatible_python
+    else:
+        python_outdated = combine_python_outdated(
+            compatible_python,
+            parse_uv_outdated(
+                {
+                    normalized_name: display_name
+                    for normalized_name, (display_name, _constraint) in (
+                        python_requirements.items()
+                    )
+                },
+                uv_tree_path.read_text(encoding="utf-8"),
+                {
+                    normalized_name: constraint
+                    for normalized_name, (_display_name, constraint) in (
+                        python_requirements.items()
+                    )
+                },
+            ),
+        )
+    javascript_requirements = direct_javascript_requirements(package_path)
+    build_system_outdated: list[OutdatedDependency] = []
+    if build_system_outdated_path is not None:
+        build_system_outdated = [
+            OutdatedDependency(**item)
+            for item in json.loads(
+                build_system_outdated_path.read_text(encoding="utf-8") or "[]"
+            )
+        ]
     return [
-        *compatible_python_dependencies(
-            pyproject_path, uv_lock_path, candidate_uv_lock_path
-        ),
+        *python_outdated,
+        *build_system_outdated,
         *parse_npm_outdated(
-            javascript_dependencies,
+            {
+                name: display_name
+                for name, (display_name, _constraint) in (
+                    javascript_requirements.items()
+                )
+            },
             npm_outdated_path.read_text(encoding="utf-8"),
+            {
+                name: constraint
+                for name, (_display_name, constraint) in (
+                    javascript_requirements.items()
+                )
+            },
         ),
     ]
 
@@ -556,23 +856,43 @@ def _load_outdated(args: argparse.Namespace) -> list[OutdatedDependency]:
         args.uv_lock,
         args.candidate_uv_lock,
         args.npm_outdated,
+        getattr(args, "uv_tree", None),
+        getattr(args, "build_system_outdated", None),
     )
 
 
 def _report(args: argparse.Namespace) -> int:
     """Print a human-readable direct dependency report."""
-    outdated = upgrade_candidates(_load_outdated(args))
-    if not outdated:
+    outdated = _load_outdated(args)
+    compatible = upgrade_candidates(outdated)
+    blocked = [item for item in outdated if item.wanted != item.latest]
+    if not compatible and not blocked:
         print("No outdated top-level dependencies found.")
         return 0
 
-    for ecosystem in ("Python", "JavaScript"):
-        matches = [item for item in outdated if item.ecosystem == ecosystem]
-        if not matches:
+    sections = (
+        ("Compatible updates", compatible, "wanted"),
+        ("Releases blocked by declared ranges", blocked, "latest"),
+    )
+    printed_section = False
+    for heading, dependencies, target_field in sections:
+        if not dependencies:
             continue
-        print(f"{ecosystem}:")
-        for item in matches:
-            print(f"  {item.name}: {item.current} -> {item.wanted}")
+        if printed_section:
+            print()
+        printed_section = True
+        print(f"{heading}:")
+        for ecosystem in ("Python", "JavaScript"):
+            matches = [item for item in dependencies if item.ecosystem == ecosystem]
+            if not matches:
+                continue
+            print(f"  {ecosystem}:")
+            for item in matches:
+                target = getattr(item, target_field)
+                suffix = ""
+                if target_field == "latest" and item.constraint:
+                    suffix = f" (declared: {item.constraint})"
+                print(f"    {item.name}: {item.current} -> {target}{suffix}")
     return 0
 
 
@@ -619,6 +939,16 @@ def _resolve_python(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_build_system(args: argparse.Namespace) -> int:
+    """Write range-blocked build-system update metadata."""
+    outdated = resolve_build_system_outdated(args.pyproject)
+    args.output.write_text(
+        json.dumps([asdict(item) for item in outdated], indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return 0
+
+
 def _add_metadata_arguments(parser: argparse.ArgumentParser) -> None:
     """Add shared project metadata arguments to a parser."""
     parser.add_argument("--pyproject", type=Path, default=Path("pyproject.toml"))
@@ -633,6 +963,8 @@ def _add_outdated_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--uv-lock", type=Path, default=Path("uv.lock"))
     parser.add_argument("--candidate-uv-lock", type=Path, required=True)
     parser.add_argument("--npm-outdated", type=Path, required=True)
+    parser.add_argument("--uv-tree", type=Path)
+    parser.add_argument("--build-system-outdated", type=Path)
 
 
 def _add_lock_arguments(parser: argparse.ArgumentParser) -> None:
@@ -670,6 +1002,13 @@ def build_parser() -> argparse.ArgumentParser:
     resolve_python.add_argument("--uv-lock", type=Path, default=Path("uv.lock"))
     resolve_python.add_argument("--output", type=Path, required=True)
     resolve_python.set_defaults(func=_resolve_python)
+
+    resolve_build_system = subparsers.add_parser("resolve-build-system")
+    resolve_build_system.add_argument(
+        "--pyproject", type=Path, default=Path("pyproject.toml")
+    )
+    resolve_build_system.add_argument("--output", type=Path, required=True)
+    resolve_build_system.set_defaults(func=_resolve_build_system)
 
     snapshot = subparsers.add_parser("snapshot")
     _add_lock_arguments(snapshot)
