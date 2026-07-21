@@ -10,6 +10,7 @@ updates:
     groups:
       python-dependencies:
         patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: build
       include: scope
@@ -24,6 +25,7 @@ updates:
     groups:
       frontend-dependencies:
         patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: build
       include: scope
