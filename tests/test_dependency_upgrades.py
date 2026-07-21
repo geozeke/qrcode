@@ -19,14 +19,17 @@ from scripts.dependency_upgrades import (  # noqa: E402
     COMMIT_SUBJECT,
     DependencyUpdate,
     OutdatedDependency,
+    combine_python_outdated,
     compatible_python_dependencies,
     dependency_updates,
+    direct_build_system_dependencies,
     direct_javascript_dependencies,
     direct_python_dependencies,
     direct_version_snapshot,
     parse_npm_outdated,
     parse_uv_outdated,
     render_commit_message,
+    resolve_build_system_outdated,
     resolve_compatible_python_lock,
     upgrade_candidates,
 )
@@ -81,6 +84,19 @@ def test_direct_javascript_dependencies_includes_supported_sections(
     }
 
 
+def test_direct_build_system_dependencies_includes_constraints(tmp_path: Path) -> None:
+    """Build requirements retain complete requirements and constraints."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        '[build-system]\nrequires = ["hatchling[foo]>=1.27,<2"]\n',
+        encoding="utf-8",
+    )
+
+    assert direct_build_system_dependencies(pyproject) == {
+        "hatchling": ("hatchling[foo]>=1.27,<2", ">=1.27,<2")
+    }
+
+
 def test_parse_uv_outdated_excludes_transitive_and_duplicate_packages() -> None:
     """Only declared depth-one Python dependencies are selected once."""
     output = """
@@ -131,18 +147,25 @@ def test_parse_npm_outdated_excludes_transitive_packages() -> None:
     assert [item.name for item in upgrade_candidates(outdated)] == ["@playwright/test"]
 
 
-def test_report_omits_npm_versions_outside_declared_ranges(
+def test_report_separates_compatible_and_blocked_versions(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Only npm packages with a newer compatible version are reported."""
+    """Compatible updates and range-blocked releases have separate sections."""
     monkeypatch.setattr(
         dependency_upgrades,
         "_load_outdated",
         lambda _args: [
-            OutdatedDependency("JavaScript", "vite", "6.4.3", "6.4.3", "8.1.5"),
             OutdatedDependency(
-                "JavaScript", "@playwright/test", "1.53.0", "1.61.1", "1.61.1"
+                "JavaScript", "vite", "6.4.3", "6.4.3", "8.1.5", "^6.0.0"
+            ),
+            OutdatedDependency(
+                "JavaScript",
+                "@playwright/test",
+                "1.53.0",
+                "1.61.1",
+                "1.61.1",
+                "^1.53.0",
             ),
         ],
     )
@@ -150,26 +173,83 @@ def test_report_omits_npm_versions_outside_declared_ranges(
     assert dependency_upgrades._report(argparse.Namespace()) == 0
 
     output = capsys.readouterr().out
-    assert "vite" not in output
-    assert "@playwright/test: 1.53.0 -> 1.61.1" in output
+    assert (
+        output
+        == """Compatible updates:
+  JavaScript:
+    @playwright/test: 1.53.0 -> 1.61.1
+
+Releases blocked by declared ranges:
+  JavaScript:
+    vite: 6.4.3 -> 8.1.5 (declared: ^6.0.0)
+"""
+    )
 
 
-def test_report_says_when_no_compatible_updates_exist(
+def test_report_shows_when_only_blocked_updates_exist(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Packages with only incompatible latest releases produce no report rows."""
+    """A range-blocked release prevents the empty-state message."""
     monkeypatch.setattr(
         dependency_upgrades,
         "_load_outdated",
         lambda _args: [
-            OutdatedDependency("JavaScript", "vite", "6.4.3", "6.4.3", "8.1.5")
+            OutdatedDependency(
+                "JavaScript", "vite", "6.4.3", "6.4.3", "8.1.5", "^6.0.0"
+            )
         ],
     )
 
     assert dependency_upgrades._report(argparse.Namespace()) == 0
 
+    assert (
+        capsys.readouterr().out
+        == """Releases blocked by declared ranges:
+  JavaScript:
+    vite: 6.4.3 -> 8.1.5 (declared: ^6.0.0)
+"""
+    )
+
+
+def test_report_says_when_no_updates_exist(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The empty-state message requires both report sections to be empty."""
+    monkeypatch.setattr(dependency_upgrades, "_load_outdated", lambda _args: [])
+
+    assert dependency_upgrades._report(argparse.Namespace()) == 0
+
     assert capsys.readouterr().out == "No outdated top-level dependencies found.\n"
+
+
+def test_select_excludes_range_blocked_releases(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The upgrade selector emits only versions allowed by current ranges."""
+    monkeypatch.setattr(
+        dependency_upgrades,
+        "_load_outdated",
+        lambda _args: [
+            OutdatedDependency(
+                "Python", "reportlab", "4.5.1", "4.5.1", "5.0.0", ">=4.4,<5"
+            ),
+            OutdatedDependency(
+                "JavaScript",
+                "prettier",
+                "3.9.5",
+                "3.9.6",
+                "3.9.6",
+                "^3.6.2",
+            ),
+        ],
+    )
+
+    assert dependency_upgrades._select(argparse.Namespace()) == 0
+
+    assert capsys.readouterr().out == "javascript\tprettier\n"
 
 
 def test_compatible_python_dependencies_uses_resolved_direct_versions(
@@ -223,7 +303,71 @@ source = { registry = "https://pypi.org/simple" }
     )
 
     assert compatible_python_dependencies(pyproject, current_lock, candidate_lock) == [
-        OutdatedDependency("Python", "FastAPI", "0.115.0", "0.139.2", "0.139.2")
+        OutdatedDependency(
+            "Python",
+            "FastAPI",
+            "0.115.0",
+            "0.139.2",
+            "0.139.2",
+            ">=0.115,<1",
+        )
+    ]
+
+
+def test_combine_python_outdated_preserves_both_update_classes() -> None:
+    """Registry latest versions augment compatible resolver results."""
+    compatible = [
+        OutdatedDependency(
+            "Python", "reportlab", "4.4.0", "4.5.1", "4.5.1", ">=4.4,<5"
+        ),
+        OutdatedDependency("Python", "ruff", "0.11.0", "0.15.0", "0.15.0", ">=0.11,<1"),
+    ]
+    latest = [
+        OutdatedDependency(
+            "Python", "reportlab", "4.4.0", "5.0.0", "5.0.0", ">=4.4,<5"
+        ),
+        OutdatedDependency("Python", "mypy", "1.20.2", "2.3.0", "2.3.0", ">=1.15,<2"),
+    ]
+
+    assert combine_python_outdated(compatible, latest) == [
+        OutdatedDependency(
+            "Python", "reportlab", "4.4.0", "4.5.1", "5.0.0", ">=4.4,<5"
+        ),
+        OutdatedDependency("Python", "mypy", "1.20.2", "1.20.2", "2.3.0", ">=1.15,<2"),
+        OutdatedDependency("Python", "ruff", "0.11.0", "0.15.0", "0.15.0", ">=0.11,<1"),
+    ]
+
+
+def test_resolve_build_system_outdated_reports_only_blocked_releases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Build requirements are omitted when their range admits the latest release."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[project]
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["hatchling>=1.27,<2", "build>=1,<2"]
+""".strip(),
+        encoding="utf-8",
+    )
+    versions = {
+        "hatchling>=1.27,<2": "1.31.0",
+        "hatchling": "1.31.0",
+        "build>=1,<2": "1.4.0",
+        "build": "2.0.0",
+    }
+    monkeypatch.setattr(
+        dependency_upgrades,
+        "resolve_standalone_requirement",
+        lambda requirement, _requires_python: versions[requirement],
+    )
+
+    assert resolve_build_system_outdated(pyproject) == [
+        OutdatedDependency("Python", "build", "1.4.0", "1.4.0", "2.0.0", ">=1,<2")
     ]
 
 

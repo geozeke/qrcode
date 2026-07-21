@@ -256,20 +256,44 @@ Actions manifests. Dependabot Alerts and the scheduled audits continue
 to cover the complete resolved dependency graph, including transitive
 dependencies. Review alerts in the repository's Security view and use
 the failed workflow's summary and logs for the corresponding audit
-details.
+details. For uv and npm, Dependabot leaves a declared range unchanged
+when it already permits the target release. It edits the manifest only
+when admitting the release requires a range change, keeping its pull
+requests aligned with the local dependency report.
 
-Use `just stale` to report compatible outdated top-level (direct) Python
-and frontend dependencies. Use `just upgrade` from a clean worktree to
-update those dependencies within the version ranges already declared in
-`pyproject.toml` and `frontend/package.json`. The upgrade recipe creates
-one local `build(deps):` commit that lists the changed direct versions;
-review and test that commit before pushing it.
+Use `just stale` to report outdated top-level (direct) Python and
+frontend dependencies. The report separates compatible updates, meaning
+versions permitted by the ranges currently declared in the manifests,
+from newer releases blocked by those ranges. A range-blocked release is
+a candidate for compatibility review and testing; its version number
+alone does not establish that the application supports it. Build-system
+requirements are included when their latest release exceeds the declared
+range, even though they are not ordinary entries in `uv.lock`.
+
+Use `just upgrade` from a clean worktree to update only compatible
+dependencies within the ranges already declared in `pyproject.toml` and
+`frontend/package.json`. The upgrade recipe creates one local
+`build(deps):` commit that lists the changed direct versions; review and
+test that commit before pushing it. It never changes a manifest range to
+admit a blocked release.
 
 Dependency resolution may necessarily change transitive versions in a
 lockfile when a direct dependency is upgraded. The local recipes do not
 select, report, or list those transitive packages as independent
 updates. Changes to declared major-version ranges remain explicit
 maintainer decisions or separate Dependabot pull requests.
+
+Review a range-blocked release on its own branch, with one major
+dependency upgrade per pull request. Read the dependency's migration
+guide and release notes, adjust only its manifest range, resolve that
+Python package with `uv lock --upgrade-package <package>`, and inspect
+the manifest and lockfile diff. For a frontend package, use
+`npm --prefix frontend install --save-dev '<package>@<range>'` for a
+development dependency or replace `--save-dev` with `--save` for a
+runtime dependency. Run `just sync` and `just check`, followed by the
+relevant focused tests. Runtime, rendering, or build dependency changes
+should also run `just deployment-test` and `just test-e2e` when
+applicable.
 
 When a security audit finds a vulnerable transitive dependency, prepare
 one `fix(security):` pull request for the compatible findings from that
