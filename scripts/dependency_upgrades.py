@@ -8,7 +8,9 @@ direct_python_dependencies
 direct_javascript_dependencies
     Read direct JavaScript dependency names from package metadata.
 outdated_dependencies
-    Filter package-manager output to direct dependencies.
+    Combine compatibility-resolved direct dependencies from both ecosystems.
+resolve_compatible_python_lock
+    Resolve compatible direct Python dependency upgrades in isolation.
 dependency_updates
     Compare direct versions before and after an upgrade.
 upgrade_candidates
@@ -20,7 +22,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -166,6 +171,54 @@ def direct_javascript_dependencies(package_path: Path) -> dict[str, str]:
     return dependencies
 
 
+def resolve_compatible_python_lock(
+    pyproject_path: Path,
+    lock_path: Path,
+    output_path: Path,
+) -> None:
+    """Resolve compatible direct Python upgrades without changing the project.
+
+    Parameters
+    ----------
+    pyproject_path
+        Project metadata path.
+    lock_path
+        Current uv lockfile path.
+    output_path
+        Destination for the resolved candidate lockfile.
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If uv cannot resolve the candidate lockfile.
+
+    Notes
+    -----
+    The resolver receives every direct Python dependency as an explicit
+    upgrade target. Its output therefore reflects both the declared version
+    ranges and the complete dependency graph, while leaving tracked files
+    untouched.
+    """
+    dependencies = direct_python_dependencies(pyproject_path)
+    with tempfile.TemporaryDirectory(prefix="qrcode-uv-upgrade-") as directory:
+        project_directory = Path(directory)
+        temporary_pyproject = project_directory / "pyproject.toml"
+        temporary_lock = project_directory / "uv.lock"
+        shutil.copy2(pyproject_path, temporary_pyproject)
+        shutil.copy2(lock_path, temporary_lock)
+
+        for filename in ("README.md", "LICENSE"):
+            source = pyproject_path.parent / filename
+            if source.is_file():
+                shutil.copy2(source, project_directory / filename)
+
+        command = ["uv", "lock", "--project", str(project_directory)]
+        for name in dependencies.values():
+            command.extend(("--upgrade-package", name))
+        subprocess.run(command, check=True)
+        shutil.copy2(temporary_lock, output_path)
+
+
 def parse_uv_outdated(
     dependencies: dict[str, str], tree_output: str
 ) -> list[OutdatedDependency]:
@@ -249,10 +302,52 @@ def parse_npm_outdated(
     return outdated
 
 
+def compatible_python_dependencies(
+    pyproject_path: Path,
+    current_lock_path: Path,
+    candidate_lock_path: Path,
+) -> list[OutdatedDependency]:
+    """Return direct Python dependencies with compatible resolved upgrades.
+
+    Parameters
+    ----------
+    pyproject_path
+        Project metadata path.
+    current_lock_path
+        Existing uv lockfile path.
+    candidate_lock_path
+        Lockfile resolved with all direct packages as upgrade targets.
+
+    Returns
+    -------
+    list[OutdatedDependency]
+        Direct Python dependencies whose resolved version changes.
+    """
+    dependencies = direct_python_dependencies(pyproject_path)
+    current_versions = locked_python_versions(current_lock_path)
+    candidate_versions = locked_python_versions(candidate_lock_path)
+    outdated: list[OutdatedDependency] = []
+    for normalized_name, display_name in dependencies.items():
+        current = current_versions.get(normalized_name)
+        candidate = candidate_versions.get(normalized_name)
+        if current and candidate and current != candidate:
+            outdated.append(
+                OutdatedDependency(
+                    ecosystem="Python",
+                    name=display_name,
+                    current=current,
+                    wanted=candidate,
+                    latest=candidate,
+                )
+            )
+    return outdated
+
+
 def outdated_dependencies(
     pyproject_path: Path,
     package_path: Path,
-    uv_tree_path: Path,
+    uv_lock_path: Path,
+    candidate_uv_lock_path: Path,
     npm_outdated_path: Path,
 ) -> list[OutdatedDependency]:
     """Return outdated direct dependencies from both ecosystems.
@@ -263,8 +358,10 @@ def outdated_dependencies(
         Python project metadata path.
     package_path
         npm package metadata path.
-    uv_tree_path
-        Captured ``uv tree --outdated`` output.
+    uv_lock_path
+        Current uv lockfile path.
+    candidate_uv_lock_path
+        Candidate lockfile resolved with direct upgrades.
     npm_outdated_path
         Captured ``npm outdated --json`` output.
 
@@ -273,11 +370,10 @@ def outdated_dependencies(
     list[OutdatedDependency]
         Python dependencies followed by JavaScript dependencies.
     """
-    python_dependencies = direct_python_dependencies(pyproject_path)
     javascript_dependencies = direct_javascript_dependencies(package_path)
     return [
-        *parse_uv_outdated(
-            python_dependencies, uv_tree_path.read_text(encoding="utf-8")
+        *compatible_python_dependencies(
+            pyproject_path, uv_lock_path, candidate_uv_lock_path
         ),
         *parse_npm_outdated(
             javascript_dependencies,
@@ -305,14 +401,10 @@ def upgrade_candidates(
 
     Notes
     -----
-    ``uv tree`` does not expose a separate newest-compatible version, so
-    uv remains responsible for enforcing each declared Python constraint.
+    Python compatibility is resolved before this function is called. npm
+    exposes the newest compatible version as its ``wanted`` value.
     """
-    return [
-        item
-        for item in outdated
-        if item.ecosystem == "Python" or item.current != item.wanted
-    ]
+    return [item for item in outdated if item.current != item.wanted]
 
 
 def locked_python_versions(lock_path: Path) -> dict[str, str]:
@@ -461,14 +553,15 @@ def _load_outdated(args: argparse.Namespace) -> list[OutdatedDependency]:
     return outdated_dependencies(
         args.pyproject,
         args.package_json,
-        args.uv_tree,
+        args.uv_lock,
+        args.candidate_uv_lock,
         args.npm_outdated,
     )
 
 
 def _report(args: argparse.Namespace) -> int:
     """Print a human-readable direct dependency report."""
-    outdated = _load_outdated(args)
+    outdated = upgrade_candidates(_load_outdated(args))
     if not outdated:
         print("No outdated top-level dependencies found.")
         return 0
@@ -479,11 +572,7 @@ def _report(args: argparse.Namespace) -> int:
             continue
         print(f"{ecosystem}:")
         for item in matches:
-            target = item.latest
-            suffix = ""
-            if item.wanted != item.latest:
-                suffix = f" (compatible: {item.wanted})"
-            print(f"  {item.name}: {item.current} -> {target}{suffix}")
+            print(f"  {item.name}: {item.current} -> {item.wanted}")
     return 0
 
 
@@ -524,6 +613,12 @@ def _message(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_python(args: argparse.Namespace) -> int:
+    """Write a compatibility-resolved candidate Python lockfile."""
+    resolve_compatible_python_lock(args.pyproject, args.uv_lock, args.output)
+    return 0
+
+
 def _add_metadata_arguments(parser: argparse.ArgumentParser) -> None:
     """Add shared project metadata arguments to a parser."""
     parser.add_argument("--pyproject", type=Path, default=Path("pyproject.toml"))
@@ -535,7 +630,8 @@ def _add_metadata_arguments(parser: argparse.ArgumentParser) -> None:
 def _add_outdated_arguments(parser: argparse.ArgumentParser) -> None:
     """Add captured outdated-output arguments to a parser."""
     _add_metadata_arguments(parser)
-    parser.add_argument("--uv-tree", type=Path, required=True)
+    parser.add_argument("--uv-lock", type=Path, default=Path("uv.lock"))
+    parser.add_argument("--candidate-uv-lock", type=Path, required=True)
     parser.add_argument("--npm-outdated", type=Path, required=True)
 
 
@@ -566,6 +662,14 @@ def build_parser() -> argparse.ArgumentParser:
     select = subparsers.add_parser("select")
     _add_outdated_arguments(select)
     select.set_defaults(func=_select)
+
+    resolve_python = subparsers.add_parser("resolve-python")
+    resolve_python.add_argument(
+        "--pyproject", type=Path, default=Path("pyproject.toml")
+    )
+    resolve_python.add_argument("--uv-lock", type=Path, default=Path("uv.lock"))
+    resolve_python.add_argument("--output", type=Path, required=True)
+    resolve_python.set_defaults(func=_resolve_python)
 
     snapshot = subparsers.add_parser("snapshot")
     _add_lock_arguments(snapshot)

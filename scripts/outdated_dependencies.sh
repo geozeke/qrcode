@@ -4,14 +4,15 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_root"
 
-uv_tree="$(mktemp)"
+candidate_uv_lock="$(mktemp)"
 npm_outdated="$(mktemp)"
 cleanup() {
-    rm -f "$uv_tree" "$npm_outdated"
+    rm -f "$candidate_uv_lock" "$npm_outdated"
 }
 trap cleanup EXIT
 
-uv tree --outdated --depth=1 --all-groups > "$uv_tree"
+uv run python -m scripts.dependency_upgrades resolve-python \
+    --output "$candidate_uv_lock"
 
 set +e
 npm --prefix frontend outdated --json > "$npm_outdated"
@@ -23,5 +24,5 @@ if ((npm_status > 1)); then
 fi
 
 uv run python -m scripts.dependency_upgrades report \
-    --uv-tree "$uv_tree" \
+    --candidate-uv-lock "$candidate_uv_lock" \
     --npm-outdated "$npm_outdated"

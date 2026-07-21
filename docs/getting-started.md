@@ -7,7 +7,6 @@ stateless and does not require a database or persistent volume.
 
 - Docker Engine
 - A current Docker Compose plugin that provides `docker compose`
-- The Docker Hub repository path for the published image
 
 ## Create `compose.yaml`
 
@@ -17,7 +16,7 @@ Copy the following block with its copy button and save it as
 ```yaml
 services:
   qrcode:
-    image: docker.io/<maintainer-namespace>/qrcode:latest
+    image: docker.io/geozeke/qrcode:latest
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -51,16 +50,6 @@ services:
 
 Make the following minimal changes before starting the service.
 
-### Select the image
-
-Replace `<maintainer-namespace>` with the Docker Hub namespace shown for
-the published image. Stable releases provide exact semantic version
-tags, a mutable major/minor tag, and `latest`. Releases at `1.0.0` and
-later also provide a mutable major tag; major-zero releases omit the
-incompatible `0` tag. Prereleases provide only exact version tags. Use
-an exact version instead of a floating tag when deployments must be
-reproducible.
-
 ### Set the render-token secret
 
 Generate a random secret:
@@ -72,15 +61,37 @@ openssl rand -hex 32
 Replace the example `QR_RENDER_TOKEN_SECRET` value with the command's
 output. Do not reuse the documented example value.
 
-### Choose the host port
+### Choose access topology and host port
 
-If port 8080 is already in use, change only the host-side port in
-`127.0.0.1:8080:8080`. For example, use `127.0.0.1:9080:8080` to listen
-on port 9080.
+The default `127.0.0.1:8080:8080` mapping is for the recommended setup:
+a reverse proxy running directly on the Docker host. Leave it unchanged
+and configure the proxy to reach `http://127.0.0.1:8080`.
 
-Keep the `127.0.0.1` binding when a reverse proxy runs directly on the
-Docker host. See [Deployment topology](deployment.md) before exposing
-the application publicly or connecting it to a containerized proxy.
+When the reverse proxy runs on another host, replace the mapping with:
+
+```yaml
+ports:
+  - "8080:8080"
+```
+
+Configure the remote proxy to reach the Docker host's network address on
+port 8080. This mapping publishes the application on every host network
+interface. Restrict access to the remote proxy with effective network
+controls, such as cloud security groups, firewall rules, or private
+networking.
+
+For direct access from another machine, use the same `"8080:8080"`
+mapping. This is appropriate only for a trusted development or private
+network: the application does not provide TLS or authentication. Do not
+expose it directly to the public internet; use a reverse proxy instead.
+
+For direct access only from the Docker host, retain the default loopback
+mapping. If port 8080 is already in use, change only the host-side port:
+use `127.0.0.1:9080:8080` for loopback access or `9080:8080` for the
+network-reachable mappings above.
+
+See [Deployment topology](deployment.md) for reverse-proxy integration
+and safeguards.
 
 ## Start the application
 
@@ -91,7 +102,7 @@ docker compose up --force-recreate -d
 ```
 
 Because the configuration uses `pull_policy: always`, Compose retrieves
-the selected image before recreating the container.
+the current published image before recreating the container.
 
 ## Verify the deployment
 
@@ -99,8 +110,10 @@ the selected image before recreating the container.
 docker compose ps
 ```
 
-Wait for the `qrcode` service to report `healthy`, then open
-<http://127.0.0.1:8080>, using the adjusted host port if you changed it.
+Wait for the `qrcode` service to report `healthy`. For the default
+mapping, open <http://127.0.0.1:8080>, using the adjusted host port if
+you changed it. For remote-proxy or direct network access, use the proxy
+URL or the Docker host's reachable address and published port.
 
 Follow application logs when troubleshooting:
 
@@ -110,8 +123,8 @@ docker compose logs --follow qrcode
 
 ## Update the application
 
-Change the image tag if necessary, then retrieve the selected image and
-replace the container with the same startup command:
+Retrieve the current published image and replace the container with the
+same startup command:
 
 ```console
 docker compose up --force-recreate -d

@@ -1,8 +1,8 @@
 # Deployment
 
 The [getting-started guide](getting-started.md) provides a complete,
-copy-ready Docker Compose deployment. This guide covers network topology,
-reverse-proxy integration, and production safeguards.
+copy-ready Docker Compose deployment. This guide covers network
+topology, reverse-proxy integration, and production safeguards.
 
 ## Recommended topology
 
@@ -10,34 +10,49 @@ Run QR Code Generator behind a reverse proxy that provides TLS, host
 routing, and any required access control. The application intentionally
 does not trust forwarded identity headers or provide built-in accounts.
 
-The default Compose port mapping is:
+Use this Compose port mapping when the reverse proxy runs directly on
+the Docker host:
 
 ```yaml
 ports:
-  - "127.0.0.1:${QR_HOST_PORT:-8080}:8080"
+  - "127.0.0.1:8080:8080"
 ```
 
-This is appropriate when the reverse proxy runs directly on the Docker
-host. For a containerized proxy, attach both services to a private Docker
-network, remove the host port publication, and proxy to `qrcode:8080`.
+Configure the proxy to reach `http://127.0.0.1:8080`. For a
+containerized proxy on the same Docker host, attach both services to a
+private Docker network, remove the host port publication, and proxy to
+`qrcode:8080`.
 
-The repository includes an optional Nginx-based example that removes the
-application port and exposes the proxy on host loopback port 8081:
+## Other access topologies
 
-```console
-docker compose -f compose.yaml -f compose.proxy.yaml up --build --detach --wait
+### Reverse proxy on another host
+
+Replace the loopback mapping with:
+
+```yaml
+ports:
+  - "8080:8080"
 ```
 
-Open <http://127.0.0.1:8081>. The included proxy is a local reference
-configuration. Add a public hostname and TLS configuration, or adapt its
-limits to an existing production reverse proxy, before exposing it
-publicly.
+The remote proxy connects to the Docker host's reachable address on port
+8080. Without a host IP, Docker publishes the port on all host
+interfaces. Restrict the port to the remote proxy with effective network
+controls, such as private networking, cloud security groups, or verified
+firewall rules.
 
-The proxy override relies on Compose's `!reset` merge tag, so use a
-current Docker Compose release.
+### Direct access without a proxy
 
-`QR_HOST_PORT` and `QR_PROXY_HOST_PORT` can override the default host
-ports without changing the tracked Compose files.
+For direct access from another machine, use the same `"8080:8080"`
+mapping and limit it to a trusted development or private network. The
+application does not provide TLS or authentication, so direct public
+exposure is not supported. Use a reverse proxy for any public deployment.
+
+For direct access only from the Docker host, retain the default
+`127.0.0.1:8080:8080` mapping.
+
+For any topology, change the host-side port only when port 8080 is
+occupied: use `127.0.0.1:9080:8080` for loopback access or `9080:8080`
+for a network-reachable mapping.
 
 ## Proxy safeguards
 
