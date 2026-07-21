@@ -114,8 +114,8 @@ changelog:
     git-cliff --unreleased
 
 # Report compatible outdated top-level Python and frontend dependencies
-outdated:
-    bash scripts/outdated_dependencies.sh
+stale:
+    bash scripts/stale_dependencies.sh
 
 # Update compatible direct dependencies and create a local commit
 upgrade: _require_setup
