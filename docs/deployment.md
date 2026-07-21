@@ -1,8 +1,8 @@
 # Deployment
 
 The [getting-started guide](getting-started.md) provides a complete,
-copy-ready Docker Compose deployment. This guide covers network topology,
-reverse-proxy integration, and production safeguards.
+copy-ready Docker Compose deployment. This guide covers network
+topology, reverse-proxy integration, and production safeguards.
 
 ## Recommended topology
 
@@ -14,30 +14,15 @@ The default Compose port mapping is:
 
 ```yaml
 ports:
-  - "127.0.0.1:${QR_HOST_PORT:-8080}:8080"
+  - "127.0.0.1:8080:8080"
 ```
 
 This is appropriate when the reverse proxy runs directly on the Docker
-host. For a containerized proxy, attach both services to a private Docker
-network, remove the host port publication, and proxy to `qrcode:8080`.
-
-The repository includes an optional Nginx-based example that removes the
-application port and exposes the proxy on host loopback port 8081:
-
-```console
-docker compose -f compose.yaml -f compose.proxy.yaml up --build --detach --wait
-```
-
-Open <http://127.0.0.1:8081>. The included proxy is a local reference
-configuration. Add a public hostname and TLS configuration, or adapt its
-limits to an existing production reverse proxy, before exposing it
-publicly.
-
-The proxy override relies on Compose's `!reset` merge tag, so use a
-current Docker Compose release.
-
-`QR_HOST_PORT` and `QR_PROXY_HOST_PORT` can override the default host
-ports without changing the tracked Compose files.
+host. For a containerized proxy, attach both services to a private
+Docker network, remove the host port publication, and proxy to
+`qrcode:8080`. Add a public hostname and TLS configuration, or adapt the
+safeguards below to an existing production reverse proxy, before exposing
+the application.
 
 ## Proxy safeguards
 

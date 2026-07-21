@@ -62,6 +62,36 @@ healthy, and then starts Vite. Press Ctrl+C to stop both servers.
 The frontend development server proxies `/api` and `/health` to the
 backend on port 8080.
 
+## Local and custom container images
+
+Build the production image from the current checkout with:
+
+```console
+just image
+```
+
+This creates the local `qrcode:local` image. The repository's tracked
+Compose files build the checkout by default and use the same tag. Set
+`QR_IMAGE` to apply a custom local tag while building:
+
+```console
+QR_IMAGE=example.invalid/your-fork/qrcode:dev \
+  docker compose up --build --detach --wait
+```
+
+The optional local Nginx reference configuration builds the same
+checkout, removes the application host port, and exposes the proxy on
+loopback port 8081:
+
+```console
+docker compose -f compose.yaml -f compose.proxy.yaml \
+  up --build --detach --wait
+```
+
+These source-tree Compose workflows are for development and deployment
+testing. Deploy the published application image by following the
+[getting-started guide](getting-started.md).
+
 ## Quality checks
 
 ```console
@@ -222,8 +252,8 @@ updates. Changes to declared major-version ranges remain explicit
 maintainer decisions or separate Dependabot pull requests.
 
 Release tags publish multi-architecture `linux/amd64` and `linux/arm64`
-images to Docker Hub and publish matching GitHub Releases. The
-repository owner configures these GitHub values:
+images to Docker Hub and publish matching GitHub Releases. Fork
+maintainers who publish their own images configure these GitHub values:
 
 - Repository variable `DOCKERHUB_REPOSITORY`, containing
   `namespace/qrcode`

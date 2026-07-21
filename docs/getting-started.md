@@ -7,7 +7,6 @@ stateless and does not require a database or persistent volume.
 
 - Docker Engine
 - A current Docker Compose plugin that provides `docker compose`
-- The Docker Hub repository path for the published image
 
 ## Create `compose.yaml`
 
@@ -17,7 +16,7 @@ Copy the following block with its copy button and save it as
 ```yaml
 services:
   qrcode:
-    image: docker.io/<maintainer-namespace>/qrcode:latest
+    image: docker.io/geozeke/qrcode:latest
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -51,16 +50,6 @@ services:
 
 Make the following minimal changes before starting the service.
 
-### Select the image
-
-Replace `<maintainer-namespace>` with the Docker Hub namespace shown for
-the published image. Stable releases provide exact semantic version
-tags, a mutable major/minor tag, and `latest`. Releases at `1.0.0` and
-later also provide a mutable major tag; major-zero releases omit the
-incompatible `0` tag. Prereleases provide only exact version tags. Use
-an exact version instead of a floating tag when deployments must be
-reproducible.
-
 ### Set the render-token secret
 
 Generate a random secret:
@@ -91,7 +80,7 @@ docker compose up --force-recreate -d
 ```
 
 Because the configuration uses `pull_policy: always`, Compose retrieves
-the selected image before recreating the container.
+the current published image before recreating the container.
 
 ## Verify the deployment
 
@@ -110,8 +99,8 @@ docker compose logs --follow qrcode
 
 ## Update the application
 
-Change the image tag if necessary, then retrieve the selected image and
-replace the container with the same startup command:
+Retrieve the current published image and replace the container with the
+same startup command:
 
 ```console
 docker compose up --force-recreate -d
