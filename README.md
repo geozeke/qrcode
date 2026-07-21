@@ -1,7 +1,7 @@
 # QR Code Generator
 
 <img
-  src="docs/assets/qr-logo.png"
+  src="https://raw.githubusercontent.com/geozeke/qrcode/main/docs/assets/qr-logo.png"
   alt="QR code encoding message"
   width="180"
 />
