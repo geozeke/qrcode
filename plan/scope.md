@@ -973,7 +973,7 @@ Maintainer workflow and releases:
 
 - Adopt `just` as the single local maintainer interface. Its recipes
   should include `setup`, `sync`, `lint`, `typecheck`, `test`,
-  `test-e2e`, `image`, `compose-smoke`, `check`, `outdated`, `upgrade`,
+  `test-e2e`, `image`, `compose-smoke`, `check`, `stale`, `upgrade`,
   `bump`, and `tag-release`.
 - `check` must run the same quality gates required by pull-request CI.
 - Keep nontrivial maintenance automation in tracked `scripts/` and call
