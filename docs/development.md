@@ -231,12 +231,32 @@ runs retain their Playwright report and traces as workflow artifacts for
 14 days. Release tags rerun every gate against the exact release
 candidate before publishing images.
 
-A weekly security workflow runs Python and npm dependency audits,
-CodeQL analysis, repository scanning, and the license inventory check.
-Dependabot proposes updates only for direct dependencies declared in
-the uv, npm, Docker, Docker Compose, and GitHub Actions manifests. The
-security audits continue to scan the complete resolved dependency
-graph, including transitive dependencies.
+A weekly security workflow runs independent Python and npm dependency
+audits, CodeQL analysis, repository scanning, and the license inventory
+check. Every job writes a result table to the workflow summary, while
+the scanner step logs contain the detailed reports. The jobs run in
+parallel, so one finding does not prevent the other audits from
+finishing. The workflow creates no issue, artifact, dependency commit,
+or pull request.
+
+To receive one email when a scheduled audit fails, open the GitHub
+notification settings and select **Actions**, **Email**, and **Only
+notify for failed workflows**. Scheduled-run notifications go to the
+user who created the workflow schedule. If necessary, the intended
+recipient can take ownership by disabling and re-enabling the workflow
+or by updating its cron expression. Repository administrators should
+also enable the dependency graph and Dependabot Alerts under the
+repository's Advanced Security settings. Leave automatic Dependabot
+security updates disabled when remediation pull requests should remain
+maintainer-controlled.
+
+Dependabot proposes routine version updates only for direct
+dependencies declared in the uv, npm, Docker, Docker Compose, and GitHub
+Actions manifests. Dependabot Alerts and the scheduled audits continue
+to cover the complete resolved dependency graph, including transitive
+dependencies. Review alerts in the repository's Security view and use
+the failed workflow's summary and logs for the corresponding audit
+details.
 
 Use `just stale` to report compatible outdated top-level (direct) Python
 and frontend dependencies. Use `just upgrade` from a clean worktree to
@@ -250,6 +270,22 @@ lockfile when a direct dependency is upgraded. The local recipes do not
 select, report, or list those transitive packages as independent
 updates. Changes to declared major-version ranges remain explicit
 maintainer decisions or separate Dependabot pull requests.
+
+When a security audit finds a vulnerable transitive dependency, prepare
+one `fix(security):` pull request for the compatible findings from that
+audit cycle. Use the ecosystem resolver rather than editing a lockfile
+by hand: target a Python package with
+`uv lock --upgrade-package <package>` and use a non-forced npm audit fix
+or targeted npm lockfile update for frontend dependencies. Do not use
+`npm audit fix --force` or a dependency override as the normal update
+path.
+
+If the fixed transitive version satisfies its parent's declared
+constraints, review the resolver-generated lockfile changes and run the
+complete quality suite. If the parent excludes every fixed version,
+update or replace the parent rather than forcing an incompatible
+transitive version. Keep any temporary risk acceptance or mitigation
+explicit and documented in the security pull request.
 
 Release tags publish multi-architecture `linux/amd64` and `linux/arm64`
 images to Docker Hub and publish matching GitHub Releases. Fork
