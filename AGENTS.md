@@ -6,12 +6,13 @@ options, previewing the result, and downloading generated codes.
 
 ## Current State
 
-- `plan/scope.md` is the current source of truth for product scope,
-  architecture direction, and accepted decisions.
+- `plan/roadmap.md` is the current source of truth for future product
+  direction, design gates, and planned capabilities.
 - `README.md` is a concise project entry point. Detailed documentation
   lives as Markdown in `docs/` and is built with Zensical.
-- Application implementation is underway. Keep changes within the agreed
-  scope unless the user explicitly changes it.
+- The initial application is deployed and active development continues.
+  Keep changes aligned with documented behavior and the roadmap unless
+  the user explicitly changes direction.
 
 ## Entry Points
 
@@ -29,7 +30,7 @@ options, previewing the result, and downloading generated codes.
   caches, or `uv` cache/artifact directories unless the task
   specifically requires it.
 - Use `rg` for searches. Start repository exploration with `README.md`,
-  `plan/scope.md`, and relevant source directories once they exist.
+  `plan/roadmap.md`, and relevant source directories once they exist.
 - Wrap Markdown prose to 72 characters when practical, but do not break links,
   code spans, tables, or other formatting that wrapping would harm.
 - When making code changes, keep documentation and metadata consistent. This
