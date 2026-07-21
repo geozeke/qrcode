@@ -561,7 +561,7 @@ def _load_outdated(args: argparse.Namespace) -> list[OutdatedDependency]:
 
 def _report(args: argparse.Namespace) -> int:
     """Print a human-readable direct dependency report."""
-    outdated = _load_outdated(args)
+    outdated = upgrade_candidates(_load_outdated(args))
     if not outdated:
         print("No outdated top-level dependencies found.")
         return 0

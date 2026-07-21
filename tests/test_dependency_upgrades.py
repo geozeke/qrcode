@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
@@ -12,6 +13,7 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts import dependency_upgrades  # noqa: E402
 from scripts.changelog_tools import validate_commit_title  # noqa: E402
 from scripts.dependency_upgrades import (  # noqa: E402
     COMMIT_SUBJECT,
@@ -127,6 +129,47 @@ def test_parse_npm_outdated_excludes_transitive_packages() -> None:
         ("vite", "6.4.3", "7.0.0"),
     ]
     assert [item.name for item in upgrade_candidates(outdated)] == ["@playwright/test"]
+
+
+def test_report_omits_npm_versions_outside_declared_ranges(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Only npm packages with a newer compatible version are reported."""
+    monkeypatch.setattr(
+        dependency_upgrades,
+        "_load_outdated",
+        lambda _args: [
+            OutdatedDependency("JavaScript", "vite", "6.4.3", "6.4.3", "8.1.5"),
+            OutdatedDependency(
+                "JavaScript", "@playwright/test", "1.53.0", "1.61.1", "1.61.1"
+            ),
+        ],
+    )
+
+    assert dependency_upgrades._report(argparse.Namespace()) == 0
+
+    output = capsys.readouterr().out
+    assert "vite" not in output
+    assert "@playwright/test: 1.53.0 -> 1.61.1" in output
+
+
+def test_report_says_when_no_compatible_updates_exist(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Packages with only incompatible latest releases produce no report rows."""
+    monkeypatch.setattr(
+        dependency_upgrades,
+        "_load_outdated",
+        lambda _args: [
+            OutdatedDependency("JavaScript", "vite", "6.4.3", "6.4.3", "8.1.5")
+        ],
+    )
+
+    assert dependency_upgrades._report(argparse.Namespace()) == 0
+
+    assert capsys.readouterr().out == "No outdated top-level dependencies found.\n"
 
 
 def test_compatible_python_dependencies_uses_resolved_direct_versions(
