@@ -61,15 +61,37 @@ openssl rand -hex 32
 Replace the example `QR_RENDER_TOKEN_SECRET` value with the command's
 output. Do not reuse the documented example value.
 
-### Choose the host port
+### Choose access topology and host port
 
-If port 8080 is already in use, change only the host-side port in
-`127.0.0.1:8080:8080`. For example, use `127.0.0.1:9080:8080` to listen
-on port 9080.
+The default `127.0.0.1:8080:8080` mapping is for the recommended setup:
+a reverse proxy running directly on the Docker host. Leave it unchanged
+and configure the proxy to reach `http://127.0.0.1:8080`.
 
-Keep the `127.0.0.1` binding when a reverse proxy runs directly on the
-Docker host. See [Deployment topology](deployment.md) before exposing
-the application publicly or connecting it to a containerized proxy.
+When the reverse proxy runs on another host, replace the mapping with:
+
+```yaml
+ports:
+  - "8080:8080"
+```
+
+Configure the remote proxy to reach the Docker host's network address on
+port 8080. This mapping publishes the application on every host network
+interface. Restrict access to the remote proxy with effective network
+controls, such as cloud security groups, firewall rules, or private
+networking.
+
+For direct access from another machine, use the same `"8080:8080"`
+mapping. This is appropriate only for a trusted development or private
+network: the application does not provide TLS or authentication. Do not
+expose it directly to the public internet; use a reverse proxy instead.
+
+For direct access only from the Docker host, retain the default loopback
+mapping. If port 8080 is already in use, change only the host-side port:
+use `127.0.0.1:9080:8080` for loopback access or `9080:8080` for the
+network-reachable mappings above.
+
+See [Deployment topology](deployment.md) for reverse-proxy integration
+and safeguards.
 
 ## Start the application
 
@@ -88,8 +110,10 @@ the current published image before recreating the container.
 docker compose ps
 ```
 
-Wait for the `qrcode` service to report `healthy`, then open
-<http://127.0.0.1:8080>, using the adjusted host port if you changed it.
+Wait for the `qrcode` service to report `healthy`. For the default
+mapping, open <http://127.0.0.1:8080>, using the adjusted host port if
+you changed it. For remote-proxy or direct network access, use the proxy
+URL or the Docker host's reachable address and published port.
 
 Follow application logs when troubleshooting:
 
