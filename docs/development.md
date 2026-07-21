@@ -208,9 +208,9 @@ the uv, npm, Docker, Docker Compose, and GitHub Actions manifests. The
 security audits continue to scan the complete resolved dependency
 graph, including transitive dependencies.
 
-Use `just outdated` to report outdated direct Python and frontend
-dependencies. Use `just upgrade` from a clean worktree to update those
-dependencies within the version ranges already declared in
+Use `just outdated` to report compatible outdated top-level (direct) Python
+and frontend dependencies. Use `just upgrade` from a clean worktree to update
+those dependencies within the version ranges already declared in
 `pyproject.toml` and `frontend/package.json`. The upgrade recipe creates
 one local `build(deps):` commit that lists the changed direct versions;
 review and test that commit before pushing it.

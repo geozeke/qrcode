@@ -14,19 +14,20 @@ fi
 
 before_versions="$(mktemp)"
 commit_message="$(mktemp)"
-uv_tree="$(mktemp)"
+candidate_uv_lock="$(mktemp)"
 npm_outdated="$(mktemp)"
 upgrade_packages="$(mktemp)"
 cleanup() {
     rm -f \
-        "$before_versions" "$commit_message" "$uv_tree" \
+        "$before_versions" "$commit_message" "$candidate_uv_lock" \
         "$npm_outdated" "$upgrade_packages"
 }
 trap cleanup EXIT
 
 uv run python -m scripts.dependency_upgrades snapshot \
     --output "$before_versions"
-uv tree --outdated --depth=1 --all-groups > "$uv_tree"
+uv run python -m scripts.dependency_upgrades resolve-python \
+    --output "$candidate_uv_lock"
 
 set +e
 npm --prefix frontend outdated --json > "$npm_outdated"
@@ -38,7 +39,7 @@ if ((npm_status > 1)); then
 fi
 
 uv run python -m scripts.dependency_upgrades select \
-    --uv-tree "$uv_tree" \
+    --candidate-uv-lock "$candidate_uv_lock" \
     --npm-outdated "$npm_outdated" \
     > "$upgrade_packages"
 

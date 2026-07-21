@@ -113,7 +113,7 @@ changelog:
     fi
     git-cliff --unreleased
 
-# Report outdated direct Python and frontend dependencies
+# Report compatible outdated top-level Python and frontend dependencies
 outdated:
     bash scripts/outdated_dependencies.sh
 
