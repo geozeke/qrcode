@@ -113,14 +113,6 @@ changelog:
     fi
     git-cliff --unreleased
 
-# Report compatible and range-blocked direct dependency updates
-stale:
-    bash scripts/stale_dependencies.sh
-
-# Update compatible direct dependencies and create a local commit
-upgrade: _require_setup
-    bash scripts/upgrade_dependencies.sh
-
 # Update project files to the specified release version
 bump version:
     uv run python -m scripts.bump_version {{ version }}
