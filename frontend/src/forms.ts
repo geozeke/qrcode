@@ -28,9 +28,33 @@ function containsControl(value: string): boolean {
   });
 }
 
+export function roundCoordinate(value: string): string {
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(value);
+  if (!match) return value;
+
+  const [, sign, integer, fraction = ''] = match;
+  if (fraction.length <= 6) return value;
+
+  const digits = [...`${integer}${fraction.slice(0, 6)}`];
+  if (fraction[6] >= '5') {
+    let index = digits.length - 1;
+    while (index >= 0 && digits[index] === '9') {
+      digits[index] = '0';
+      index -= 1;
+    }
+    if (index < 0) digits.unshift('1');
+    else digits[index] = String(Number(digits[index]) + 1);
+  }
+
+  const resultInteger = digits.slice(0, -6).join('');
+  const resultFraction = digits.slice(-6).join('');
+  const resultSign = sign && digits.some((digit) => digit !== '0') ? sign : '';
+  return `${resultSign}${resultInteger}.${resultFraction}`;
+}
+
 function validCoordinate(value: string, lower: number, upper: number): boolean {
-  if (!/^-?\d+(?:\.\d{1,6})?$/.test(value)) return false;
-  const coordinate = Number(value);
+  if (!/^-?\d+(?:\.\d+)?$/.test(value)) return false;
+  const coordinate = Number(roundCoordinate(value));
   return Number.isFinite(coordinate) && coordinate >= lower && coordinate <= upper;
 }
 
@@ -54,10 +78,10 @@ export function validatePayload(fields: PayloadFields): FieldErrors {
     }
   } else if (fields.payload_type === 'geo') {
     if (!validCoordinate(fields.latitude, -90, 90)) {
-      errors.latitude = 'Enter a latitude from −90 to 90 with up to six decimals.';
+      errors.latitude = 'Enter a latitude from −90 to 90.';
     }
     if (!validCoordinate(fields.longitude, -180, 180)) {
-      errors.longitude = 'Enter a longitude from −180 to 180 with up to six decimals.';
+      errors.longitude = 'Enter a longitude from −180 to 180.';
     }
   } else if (fields.payload_type === 'text') {
     const size = byteLength(fields.text);

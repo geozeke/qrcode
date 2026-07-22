@@ -46,6 +46,31 @@ describe('QR generator interface', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('rounds high-precision coordinates on blur and in preview requests', async () => {
+    render(App);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    await fireEvent.change(screen.getByRole('combobox', { name: 'QR content type' }), {
+      target: { value: 'geo' },
+    });
+    const latitude = screen.getByRole('textbox', { name: 'Latitude' });
+    const longitude = screen.getByRole('textbox', { name: 'Longitude' });
+    await fireEvent.input(latitude, { target: { value: '40.71281234567890' } });
+    await fireEvent.input(longitude, { target: { value: '-74.00601250000000' } });
+    await fireEvent.blur(latitude);
+    await fireEvent.blur(longitude);
+
+    expect(latitude).toHaveValue('40.712812');
+    expect(longitude).toHaveValue('-74.006013');
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 1000 });
+
+    const request = (fetch as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit;
+    const body = request.body as FormData;
+    expect(JSON.parse(body.get('request') as string).payload).toEqual({
+      latitude: '40.712812',
+      longitude: '-74.006013',
+    });
+  });
+
   it('aborts stale previews and disables stale downloads immediately', async () => {
     let firstSignal: AbortSignal | undefined;
     const fetchMock = vi

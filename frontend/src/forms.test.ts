@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { previewErrorMessage, validatePayload, type PayloadFields } from './forms';
+import { previewErrorMessage, roundCoordinate, validatePayload, type PayloadFields } from './forms';
 
 function fields(overrides: Partial<PayloadFields> = {}): PayloadFields {
   return {
@@ -20,6 +20,15 @@ describe('payload validation', () => {
     expect(validatePayload(fields())).toEqual({});
     expect(
       validatePayload(fields({ payload_type: 'geo', latitude: '-90', longitude: '180.000000' })),
+    ).toEqual({});
+    expect(
+      validatePayload(
+        fields({
+          payload_type: 'geo',
+          latitude: '40.71281234567890',
+          longitude: '-74.00601250000000',
+        }),
+      ),
     ).toEqual({});
   });
 
@@ -42,6 +51,20 @@ describe('payload validation', () => {
         fields({ payload_type: 'wifi', security: 'wpa', ssid: 'Office', password: 'short' }),
       ).password,
     ).toBeDefined();
+  });
+});
+
+describe('coordinate rounding', () => {
+  it('rounds excess precision half away from zero', () => {
+    expect(roundCoordinate('40.71281234567890')).toBe('40.712812');
+    expect(roundCoordinate('-74.00601250000000')).toBe('-74.006013');
+    expect(roundCoordinate('1.9999999')).toBe('2.000000');
+    expect(roundCoordinate('-0.0000005')).toBe('-0.000001');
+  });
+
+  it('preserves valid inputs that already have six or fewer decimals', () => {
+    expect(roundCoordinate('40.7128')).toBe('40.7128');
+    expect(roundCoordinate('-74.006000')).toBe('-74.006000');
   });
 });
 

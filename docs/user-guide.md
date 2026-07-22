@@ -19,8 +19,9 @@ adds `https://`.
 
 ### Location
 
-Enter decimal latitude and longitude coordinates with no more than six
-fractional digits.
+Enter decimal latitude and longitude coordinates. Values with more than
+six fractional digits are rounded to six places, providing roughly
+11-centimeter coordinate resolution.
 
 ### Plain text
 

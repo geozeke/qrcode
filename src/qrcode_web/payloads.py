@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation
+import re
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 from qrcode_web.errors import RequestValidationError, ValidationIssue
+
+_DECIMAL_COORDINATE = re.compile(r"-?\d+(?:\.\d+)?")
+_COORDINATE_PRECISION = Decimal("0.000001")
 
 
 def _invalid(path: str, code: str, message: str) -> RequestValidationError:
@@ -81,15 +85,14 @@ def _coordinate(value: Any, path: str, lower: Decimal, upper: Decimal) -> str:
     str
         Plain decimal coordinate with at most six fractional digits.
     """
-    if not isinstance(value, str) or not value or "e" in value.lower() or "," in value:
+    if not isinstance(value, str) or not _DECIMAL_COORDINATE.fullmatch(value):
         raise _invalid(path, "coordinate", "Enter a decimal coordinate.")
     try:
         coordinate = Decimal(value)
+        coordinate = coordinate.quantize(_COORDINATE_PRECISION, rounding=ROUND_HALF_UP)
     except InvalidOperation as error:
         raise _invalid(path, "coordinate", "Enter a decimal coordinate.") from error
-    exponent = coordinate.as_tuple().exponent
-    fractional_digits = -exponent if isinstance(exponent, int) else 7
-    if coordinate < lower or coordinate > upper or fractional_digits > 6:
+    if coordinate < lower or coordinate > upper:
         raise _invalid(path, "range", "Enter a coordinate in the supported range.")
     if not coordinate:
         return "0"
