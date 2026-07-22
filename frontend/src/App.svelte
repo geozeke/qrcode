@@ -2,6 +2,7 @@
   import { onDestroy, onMount, tick } from 'svelte';
   import {
     previewErrorMessage,
+    roundCoordinate,
     validatePayload,
     type FieldErrors,
     type OutputFormat,
@@ -54,7 +55,7 @@
       payload_type === 'url'
         ? { url }
         : payload_type === 'geo'
-          ? { latitude, longitude }
+          ? { latitude: roundCoordinate(latitude), longitude: roundCoordinate(longitude) }
           : payload_type === 'text'
             ? { text }
             : { security, ssid, password: security === 'open' ? '' : password, hidden };
@@ -199,6 +200,16 @@
       return;
     }
     preview_timer = setTimeout(() => void refresh_preview(), 300);
+  }
+
+  function round_latitude(): void {
+    latitude = roundCoordinate(latitude);
+    schedule_preview();
+  }
+
+  function round_longitude(): void {
+    longitude = roundCoordinate(longitude);
+    schedule_preview();
   }
 
   async function announce_issue(message: string): Promise<void> {
@@ -365,6 +376,7 @@
                 bind:value={latitude}
                 inputmode="decimal"
                 on:input={schedule_preview}
+                on:blur={round_latitude}
                 placeholder="40.7128"
               />
               {#if field_errors.latitude}<span id="latitude-error" class="field-error"
@@ -380,6 +392,7 @@
                 bind:value={longitude}
                 inputmode="decimal"
                 on:input={schedule_preview}
+                on:blur={round_longitude}
                 placeholder="-74.0060"
               />
               {#if field_errors.longitude}<span id="longitude-error" class="field-error"
