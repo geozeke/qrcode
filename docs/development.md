@@ -231,13 +231,14 @@ runs retain their Playwright report and traces as workflow artifacts for
 14 days. Release tags rerun every gate against the exact release
 candidate before publishing images.
 
-A weekly security workflow runs independent Python and npm dependency
+The security workflow runs independent Python and npm dependency
 audits, CodeQL analysis, repository scanning, and the license inventory
-check. Every job writes a result table to the workflow summary, while
-the scanner step logs contain the detailed reports. The jobs run in
-parallel, so one finding does not prevent the other audits from
-finishing. The workflow creates no issue, artifact, dependency commit,
-or pull request.
+check for Dependabot pull requests, relevant pushes to `main`, and its
+weekly schedule. Every job writes a result table to the workflow
+summary, while the scanner step logs contain the detailed reports. The
+jobs run in parallel, so one finding does not prevent the other audits
+from finishing. The workflow creates no issue, artifact, dependency
+commit, or pull request.
 
 To receive one email when a scheduled audit fails, open the GitHub
 notification settings and select **Actions**, **Email**, and **Only
@@ -267,11 +268,29 @@ Treat Dependabot pull requests as the routine direct-dependency update
 workflow. Review the release notes and the manifest and lockfile diff,
 including any resolver-required transitive changes. Major updates need
 explicit compatibility review and relevant focused tests in addition to
-the required checks. Runtime, rendering, or build dependency changes
-should also run `just deployment-test` and `just test-e2e` when
-applicable. Merge one dependency pull request at a time, then rebase or
-recreate remaining Dependabot pull requests against the updated default
-branch.
+the required checks. Minor and patch updates from Dependabot are
+eligible for squash auto-merge after the application quality, browser,
+container, and Dependabot security gates pass. The security gate
+requires the repository scan, Python and JavaScript audits, license
+policy, and CodeQL analysis to succeed.
+
+GitHub branch protection must require branches to be up to date before
+merging. Repository administrators must enable squash merging and
+auto-merge, allow GitHub Actions read and write workflow permissions,
+then require the `Application quality`, `Browser tests`,
+`Production container`, and `Dependabot security gate` checks on
+`main`. After any change reaches `main`, automation requests a rebase
+of every remaining Dependabot pull request. The resulting force-push
+reruns the quality and security pipelines against the new default
+branch. Major updates, updates without recognized semantic-version
+metadata, and pull requests with maintainer changes remain manual.
+
+Dependabot classifies a SHA-pinned GitHub Action update from its
+associated release tag, so minor and patch releases remain eligible.
+It does not expose Renovate's separate `pinDigest` update type or create
+first-time digest pins. Runtime, rendering, or build dependency changes
+that are not eligible for auto-merge should also run
+`just deployment-test` and `just test-e2e` when applicable.
 
 When a security audit finds a vulnerable transitive dependency, prepare
 one `fix(security):` pull request for the compatible findings from that
