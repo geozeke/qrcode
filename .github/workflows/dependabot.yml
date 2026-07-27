@@ -6,6 +6,7 @@ on:
     types: [completed]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -24,6 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Check out automation policy
+        uses: actions/checkout@v6
+
       - name: Download verified metadata
         env:
           GH_REPO: ${{ github.repository }}
@@ -35,52 +39,120 @@ jobs:
             --name dependabot-metadata \
             --dir "$RUNNER_TEMP/dependabot"
 
+      - name: Evaluate auto-merge policy
+        id: policy
+        env:
+          METADATA_PATH: ${{ runner.temp }}/dependabot/dependabot-metadata.json
+        run: |
+          python -m scripts.dependabot_policy \
+            "$METADATA_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Summarize auto-merge policy
+        env:
+          ECOSYSTEM: ${{ steps.policy.outputs.ecosystem }}
+          ELIGIBLE: ${{ steps.policy.outputs.eligible }}
+          MAINTAINER_CHANGES: ${{ steps.policy.outputs.maintainer_changes }}
+          REASON: ${{ steps.policy.outputs.reason }}
+          UPDATE_TYPE: ${{ steps.policy.outputs.update_type }}
+        run: |
+          {
+            echo "### Dependabot auto-merge policy"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Ecosystem | \`$ECOSYSTEM\` |"
+            echo "| Update type | \`$UPDATE_TYPE\` |"
+            echo "| Maintainer changes | \`$MAINTAINER_CHANGES\` |"
+            echo "| Eligible | \`$ELIGIBLE\` |"
+            echo "| Reason | \`$REASON\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify repository merge settings
+        if: steps.policy.outputs.eligible == 'true'
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          settings="$(gh api "repos/$GH_REPO")"
+          allow_auto_merge="$(jq --raw-output '.allow_auto_merge' <<< "$settings")"
+          allow_squash_merge="$(jq --raw-output '.allow_squash_merge' <<< "$settings")"
+
+          if [[ "$allow_auto_merge" != "true" ||
+                "$allow_squash_merge" != "true" ]]; then
+            {
+              echo
+              echo "### Repository configuration required"
+              echo
+              echo "Enable **Allow auto-merge** and **Allow squash merging**"
+              echo "under **Settings → General → Pull Requests**."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Repository auto-merge and squash merging must be enabled."
+            exit 1
+          fi
+
       - name: Enable squash auto-merge
+        if: steps.policy.outputs.eligible == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           METADATA_PATH: ${{ runner.temp }}/dependabot/dependabot-metadata.json
         run: |
-          if ! jq --exit-status '
-            .maintainer_changes == "false" and
-            (.ecosystem | IN(
-              "uv",
-              "npm",
-              "docker",
-              "docker-compose",
-              "github-actions"
-            )) and
-            (.update_type | IN(
-              "version-update:semver-minor",
-              "version-update:semver-patch"
-            ))
-          ' "$METADATA_PATH" > /dev/null; then
-            echo "The Dependabot update is not eligible for auto-merge."
-            exit 0
-          fi
-
           pr_url="$(jq --raw-output '.pr_url' "$METADATA_PATH")"
           gh pr merge --auto --squash "$pr_url"
 
   rebase-open-pull-requests:
     name: Rebase open Dependabot pull requests
-    if: github.event_name == 'push'
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
       group: dependabot-rebase
       cancel-in-progress: false
     steps:
+      - name: Verify GitHub App configuration
+        env:
+          APP_CLIENT_ID: ${{ vars.DEPENDABOT_AUTOMATION_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.DEPENDABOT_AUTOMATION_APP_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APP_CLIENT_ID" || -z "$APP_PRIVATE_KEY" ]]; then
+            {
+              echo "### GitHub App configuration required"
+              echo
+              echo "Configure the repository variable"
+              echo "\`DEPENDABOT_AUTOMATION_APP_CLIENT_ID\` and repository secret"
+              echo "\`DEPENDABOT_AUTOMATION_APP_PRIVATE_KEY\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Dependabot automation GitHub App credentials are missing."
+            exit 1
+          fi
+
+      - name: Create GitHub App token
+        id: app_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ vars.DEPENDABOT_AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DEPENDABOT_AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: read
+
       - name: Request fresh Dependabot branches
         env:
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
         run: |
-          gh pr list \
-            --repo "$GH_REPO" \
-            --state open \
-            --author "app/dependabot" \
-            --json url \
-            --jq '.[].url' |
-            while IFS= read -r pr_url; do
-              gh pr comment "$pr_url" --body "@dependabot rebase"
-            done
+          mapfile -t pr_urls < <(
+            gh pr list \
+              --repo "$GH_REPO" \
+              --state open \
+              --author "app/dependabot" \
+              --json url \
+              --jq '.[].url'
+          )
+          for pr_url in "${pr_urls[@]}"; do
+            gh pr comment "$pr_url" --body "@dependabot rebase"
+          done
+          echo "Requested rebases for ${#pr_urls[@]} Dependabot pull requests." \
+            >> "$GITHUB_STEP_SUMMARY"

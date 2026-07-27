@@ -279,11 +279,42 @@ merging. Repository administrators must enable squash merging and
 auto-merge, allow GitHub Actions read and write workflow permissions,
 then require the `Application quality`, `Browser tests`,
 `Production container`, and `Dependabot security gate` checks on
-`main`. After any change reaches `main`, automation requests a rebase
-of every remaining Dependabot pull request. The resulting force-push
-reruns the quality and security pipelines against the new default
-branch. Major updates, updates without recognized semantic-version
-metadata, and pull requests with maintainer changes remain manual.
+`main`. Eligible runs verify the repository merge settings and report
+the Dependabot ecosystem, update type, maintainer-change state, and
+policy decision in the workflow summary.
+
+Rebase requests use a repository-scoped GitHub App because commands from
+`github-actions[bot]` are not accepted as maintainer commands by
+Dependabot. Register a GitHub App without a webhook and grant it these
+repository permissions:
+
+- Contents: Read and write.
+- Issues: Read and write.
+- Pull requests: Read-only.
+
+Install the App only on this repository. Store its client ID in the
+repository variable `DEPENDABOT_AUTOMATION_APP_CLIENT_ID`, then generate
+a private key and store the complete PEM value in the repository secret
+`DEPENDABOT_AUTOMATION_APP_PRIVATE_KEY`. The workflow exchanges those
+credentials for a short-lived installation token and revokes the token
+when the job finishes.
+
+After any change reaches `main`, automation uses the App identity to
+request a rebase of every remaining Dependabot pull request. The
+resulting force-push reruns the metadata, quality, and security
+pipelines against the new default branch. Run the `Dependabot
+automation` workflow manually to request the same recovery without
+pushing a new commit. Major updates, updates without recognized
+semantic-version metadata, and pull requests with maintainer changes
+remain manual.
+
+If an eligible update does not enable auto-merge, inspect the
+`Dependabot automation` summary first. A repository-configuration error
+means that **Allow auto-merge** or **Allow squash merging** is disabled.
+A GitHub App configuration error identifies the missing variable or
+secret. After correcting repository settings, request
+`@dependabot rebase` as a maintainer or manually run the workflow; the
+resulting synchronize event reevaluates the pull request.
 
 Dependabot classifies a SHA-pinned GitHub Action update from its
 associated release tag, so minor and patch releases remain eligible.

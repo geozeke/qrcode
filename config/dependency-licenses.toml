@@ -49,6 +49,7 @@ uv = "Apache-2.0 OR MIT"
 [actions]
 "actions/checkout" = "MIT"
 "actions/configure-pages" = "MIT"
+"actions/create-github-app-token" = "MIT"
 "actions/deploy-pages" = "MIT"
 "actions/setup-node" = "MIT"
 "actions/setup-python" = "MIT"
