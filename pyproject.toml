@@ -55,7 +55,7 @@ dev = [
   "pytest>=9.1.1,<10",
   "pytest-cov>=7.1.0,<8",
   "ruff>=0.11,<1",
-  "types-reportlab>=4.4,<5",
+  "types-reportlab>=4.5.1.20260724,<5",
   "zxing-cpp>=3.1.0,<4",
 ]
 
