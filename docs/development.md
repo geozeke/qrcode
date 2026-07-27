@@ -279,11 +279,15 @@ merging. Repository administrators must enable squash merging and
 auto-merge, allow GitHub Actions read and write workflow permissions,
 then require the `Application quality`, `Browser tests`,
 `Production container`, and `Dependabot security gate` checks on
-`main`. After any change reaches `main`, automation requests a rebase
-of every remaining Dependabot pull request. The resulting force-push
-reruns the quality and security pipelines against the new default
-branch. Major updates, updates without recognized semantic-version
-metadata, and pull requests with maintainer changes remain manual.
+`main`. Dependabot uses its default automatic rebase behavior to refresh
+open pull requests on scheduled update checks and after conflicts with
+the target branch. Maintainers can request an immediate refresh by
+commenting `@dependabot rebase` on the pull request.
+
+Major updates, updates without recognized semantic-version metadata, and
+pull requests with maintainer changes remain manual. If an eligible
+update does not enable auto-merge, verify the repository settings and
+request a rebase so the synchronize event reevaluates the pull request.
 
 Dependabot classifies a SHA-pinned GitHub Action update from its
 associated release tag, so minor and patch releases remain eligible.
