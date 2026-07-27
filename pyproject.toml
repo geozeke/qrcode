@@ -21,7 +21,7 @@ classifiers = [
 ]
 dependencies = [
   "anyio>=4.9,<5",
-  "fastapi>=0.115,<1",
+  "fastapi>=0.140.2,<1",
   "pillow>=12.0,<13",
   "python-multipart>=0.0.20,<1",
   "reportlab>=5.0.0,<6",
@@ -49,12 +49,12 @@ security = [
   "pip-audit>=2.9,<3",
 ]
 dev = [
-  "httpx2>=2.7,<3",
+  "httpx2>=2.9.1,<3",
   "mypy>=2.3.0,<3",
   "pypdf>=6,<7",
   "pytest>=9.1.1,<10",
   "pytest-cov>=7.1.0,<8",
-  "ruff>=0.11,<1",
+  "ruff>=0.16.0,<1",
   "types-reportlab>=4.5.1.20260724,<5",
   "zxing-cpp>=3.1.0,<4",
 ]
