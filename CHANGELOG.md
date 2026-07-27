@@ -6,6 +6,24 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-07-27
+
+[Compare with 0.1.1](https://github.com/geozeke/qrcode/compare/v0.1.1...v0.1.2)
+
+### Added
+
+- Add auto-rounding of lat/long coordinates (#36) ([82a0013](https://github.com/geozeke/qrcode/commit/82a0013d3783b9292a4dbacad45382accfee38ac))
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group with 6 updates ([7531007](https://github.com/geozeke/qrcode/commit/753100744040cc7af2e8ccfb244d1dcbfd7fcac6))
+
+- *(deps-dev)* Bump prettier ([31ec419](https://github.com/geozeke/qrcode/commit/31ec419e7886fe0a6acb73cc022747baf7662c6f))
+
+- *(deps)* Bump actions/upload-artifact from 5 to 7 ([38e5dbd](https://github.com/geozeke/qrcode/commit/38e5dbdf6a0482e5437da6ad8115c4385246cd7e))
+
+- *(deps)* Bump astral-sh/setup-uv from 8.1.0 to 9.0.0 ([a04ae50](https://github.com/geozeke/qrcode/commit/a04ae508bc4b31b738a21536d1df5d76fa018adf))
+
 ## [0.1.1] - 2026-07-21
 
 [Compare with 0.1.0](https://github.com/geozeke/qrcode/compare/v0.1.0...v0.1.1)
