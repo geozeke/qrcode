@@ -26,14 +26,14 @@
     "test:e2e": "playwright test"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.53.0",
     "@sveltejs/vite-plugin-svelte": "^5.1.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.4.2",
     "@tsconfig/svelte": "^5.0.4",
     "@types/node": "^22.15.0",
-    "eslint": "^9.25.0",
+    "eslint": "^10.8.0",
     "eslint-plugin-svelte": "^3.5.1",
     "globals": "^16.5.0",
     "jsdom": "^29.1.1",

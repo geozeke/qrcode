@@ -1,0 +1,86 @@
+name: Dependabot automation
+
+on:
+  workflow_run:
+    workflows: [Dependabot metadata]
+    types: [completed]
+  push:
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request_target' &&
+      github.repository == 'geozeke/qrcode'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download verified metadata
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          gh run download "$RUN_ID" \
+            --repo "$GH_REPO" \
+            --name dependabot-metadata \
+            --dir "$RUNNER_TEMP/dependabot"
+
+      - name: Enable squash auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          METADATA_PATH: ${{ runner.temp }}/dependabot/dependabot-metadata.json
+        run: |
+          if ! jq --exit-status '
+            .maintainer_changes == "false" and
+            (.ecosystem | IN(
+              "uv",
+              "npm",
+              "docker",
+              "docker-compose",
+              "github-actions"
+            )) and
+            (.update_type | IN(
+              "version-update:semver-minor",
+              "version-update:semver-patch"
+            ))
+          ' "$METADATA_PATH" > /dev/null; then
+            echo "The Dependabot update is not eligible for auto-merge."
+            exit 0
+          fi
+
+          pr_url="$(jq --raw-output '.pr_url' "$METADATA_PATH")"
+          gh pr merge --auto --squash "$pr_url"
+
+  rebase-open-pull-requests:
+    name: Rebase open Dependabot pull requests
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: dependabot-rebase
+      cancel-in-progress: false
+    steps:
+      - name: Request fresh Dependabot branches
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr list \
+            --repo "$GH_REPO" \
+            --state open \
+            --author "app/dependabot" \
+            --json url \
+            --jq '.[].url' |
+            while IFS= read -r pr_url; do
+              gh pr comment "$pr_url" --body "@dependabot rebase"
+            done

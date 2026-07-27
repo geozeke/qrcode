@@ -1,6 +1,7 @@
 name: Security
 
 on:
+  pull_request:
   schedule:
     - cron: "23 7 * * 1"
   push:
@@ -20,9 +21,16 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   repository-scan:
     name: Trivy repository scan
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -57,6 +65,9 @@ jobs:
 
   python-audit:
     name: Python dependency audit
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -90,6 +101,9 @@ jobs:
 
   javascript-audit:
     name: JavaScript dependency audit
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -123,6 +137,9 @@ jobs:
 
   license-policy:
     name: Direct dependency license policy
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -156,6 +173,9 @@ jobs:
 
   codeql:
     name: CodeQL analysis
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -194,3 +214,46 @@ jobs:
           (steps.codeql_init.outcome == 'failure' ||
           steps.codeql_analyze.outcome == 'failure')
         run: exit 1
+
+  dependabot-security:
+    name: Dependabot security gate
+    if: always() && github.event_name == 'pull_request'
+    needs:
+      - repository-scan
+      - python-audit
+      - javascript-audit
+      - license-policy
+      - codeql
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+      REPOSITORY_SCAN_RESULT: ${{ needs.repository-scan.result }}
+      PYTHON_AUDIT_RESULT: ${{ needs.python-audit.result }}
+      JAVASCRIPT_AUDIT_RESULT: ${{ needs.javascript-audit.result }}
+      LICENSE_POLICY_RESULT: ${{ needs.license-policy.result }}
+      CODEQL_RESULT: ${{ needs.codeql.result }}
+    steps:
+      - name: Enforce Dependabot security results
+        run: |
+          if [[ "$IS_DEPENDABOT" != "true" ]]; then
+            echo "Security jobs are required only for Dependabot pull requests."
+            exit 0
+          fi
+
+          failed=0
+          for result in \
+            "$REPOSITORY_SCAN_RESULT" \
+            "$PYTHON_AUDIT_RESULT" \
+            "$JAVASCRIPT_AUDIT_RESULT" \
+            "$LICENSE_POLICY_RESULT" \
+            "$CODEQL_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              failed=1
+            fi
+          done
+
+          if ((failed)); then
+            echo "At least one Dependabot security job did not succeed."
+            exit 1
+          fi
