@@ -21,7 +21,7 @@ classifiers = [
 ]
 dependencies = [
   "anyio>=4.9,<5",
-  "fastapi>=0.140.3,<1",
+  "fastapi>=0.141.1,<1",
   "pillow>=12.0,<13",
   "python-multipart>=0.0.20,<1",
   "reportlab>=5.0.0,<6",
@@ -43,7 +43,7 @@ packages = ["src/qrcode_web"]
 
 [dependency-groups]
 docs = [
-  "zensical>=0.0.51,<0.1",
+  "zensical>=0.0.52,<0.1",
 ]
 security = [
   "pip-audit>=2.9,<3",
@@ -54,9 +54,9 @@ dev = [
   "pypdf>=6,<7",
   "pytest>=9.1.1,<10",
   "pytest-cov>=7.1.0,<8",
-  "ruff>=0.16.0,<1",
-  "types-reportlab>=4.5.1.20260724,<5",
-  "zxing-cpp>=3.1.0,<4",
+  "ruff>=0.16.1,<1",
+  "types-reportlab>=4.5.1.20260728,<5",
+  "zxing-cpp>=3.1.1,<4",
 ]
 
 [tool.uv]
