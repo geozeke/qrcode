@@ -43,7 +43,7 @@ packages = ["src/qrcode_web"]
 
 [dependency-groups]
 docs = [
-  "zensical>=0.0.52,<0.1",
+  "zensical>=0.0.53,<0.1",
 ]
 security = [
   "pip-audit>=2.9,<3",
@@ -54,7 +54,7 @@ dev = [
   "pypdf>=6,<7",
   "pytest>=9.1.1,<10",
   "pytest-cov>=7.1.0,<8",
-  "ruff>=0.16.1,<1",
+  "ruff>=0.16.2,<1",
   "types-reportlab>=4.5.1.20260728,<5",
   "zxing-cpp>=3.1.1,<4",
 ]
