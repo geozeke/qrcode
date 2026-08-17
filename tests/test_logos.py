@@ -113,6 +113,24 @@ def test_logo_requires_square_modules_and_h_correction(monkeypatch: object) -> N
             assert response.status_code == 415
 
 
+def test_micro_qr_rejects_logos(monkeypatch: object) -> None:
+    """Micro QR requests reject logo uploads before encoding."""
+    monkeypatch.setenv("QR_RENDER_TOKEN_SECRET", "a" * 32)  # type: ignore[attr-defined]
+    state = json.dumps(
+        {
+            "symbol_type": "micro",
+            "payload_type": "text",
+            "payload": {"text": "HELLO"},
+            "error_correction": "Q",
+        }
+    )
+    with TestClient(create_app()) as client:
+        response = client.post("/api/preview", files=_files(state, _logo()))
+
+    assert response.status_code == 415
+    assert "not supported for Micro QR Codes" in response.json()["issues"][0]["message"]
+
+
 def test_logo_rejects_bad_format_size_and_unsafe_center(monkeypatch: object) -> None:
     """Invalid, oversized, and function-overlapping logos are rejected safely."""
     monkeypatch.setenv("QR_RENDER_TOKEN_SECRET", "a" * 32)  # type: ignore[attr-defined]

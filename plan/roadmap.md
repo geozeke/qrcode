@@ -1,6 +1,6 @@
 # QR Code Generator Design Roadmap
 
-Last updated: 2026-07-21
+Last updated: 2026-08-17
 
 ## Purpose
 
@@ -141,7 +141,7 @@ use case and scanner test matrix for each format.
 
 Candidate formats:
 
-- Compact QR variants: Micro QR Code and rMQR Code.
+- Compact QR variants: rMQR Code. Micro QR Code is implemented.
 - Retail and linear barcodes: UPC-A, UPC-E, EAN-13, EAN-8, and Code 128.
 - Additional two-dimensional formats: Data Matrix, PDF417, and Aztec.
 

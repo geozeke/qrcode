@@ -99,6 +99,7 @@ textarea:hover {
 }
 
 input[aria-invalid='true'],
+select[aria-invalid='true'],
 textarea[aria-invalid='true'] {
   border-color: var(--danger);
   border-width: 2px;

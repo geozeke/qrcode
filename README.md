@@ -7,7 +7,8 @@
 />
 
 A private, stateless, self-hostable web application for creating
-scanner-safe QR codes and exporting them as PNG, JPG, SVG, or PDF.
+scanner-safe Standard and Micro QR codes and exporting them as PNG,
+JPG, SVG, or PDF.
 
 Deploy the published Docker Hub image
 `docker.io/geozeke/qrcode:latest` with the

@@ -1,4 +1,5 @@
 export type PayloadType = 'url' | 'geo' | 'text' | 'wifi';
+export type SymbolType = 'qr' | 'micro';
 export type OutputFormat = 'png' | 'jpg' | 'svg' | 'pdf';
 export type Theme = 'light' | 'dark';
 
