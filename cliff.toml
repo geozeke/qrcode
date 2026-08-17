@@ -22,9 +22,9 @@ body = """
 {% set breaking = commits | filter(attribute="breaking", value=true) %}\
 {% if breaking | length != 0 %}
 ### Breaking Changes
-{% for commit in breaking %}
-- {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/geozeke/qrcode/commit/{{ commit.id }}))
-{% if commit.breaking_description and commit.breaking_description != commit.message %}
+
+{% for commit in breaking -%}
+- {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/geozeke/qrcode/commit/{{ commit.id }})){% if commit.breaking_description and commit.breaking_description != commit.message %}
   **Migration:** {{ commit.breaking_description }}
 {% endif %}
 {% endfor %}
@@ -33,7 +33,8 @@ body = """
 {% for group, commits in regular | group_by(attribute="group") %}
 {% if group != "<!-- 99 -->Internal" %}
 ### {{ group | striptags | trim | upper_first }}
-{% for commit in commits %}
+
+{% for commit in commits -%}
 - {% if commit.scope %}*({{ commit.scope }})* {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/geozeke/qrcode/commit/{{ commit.id }}))
 {% endfor %}
 {% endif %}
