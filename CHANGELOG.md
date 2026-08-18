@@ -6,6 +6,14 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-08-18
+
+[Compare with 0.2.0](https://github.com/geozeke/qrcode/compare/v0.2.0...v0.2.1)
+
+### Deployment & Operations
+
+- Tune image release workflow (#77) ([a2fab87](https://github.com/geozeke/qrcode/commit/a2fab879dafe685339f42aa346766905061fedda))
+
 ## [0.2.0] - 2026-08-18
 
 [Compare with 0.1.2](https://github.com/geozeke/qrcode/compare/v0.1.2...v0.2.0)
