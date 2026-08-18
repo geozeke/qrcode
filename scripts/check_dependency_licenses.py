@@ -45,7 +45,9 @@ def main() -> None:
     javascript_dependencies.update(package.get("devDependencies", {}))
 
     dockerfile = (ROOT / "Dockerfile").read_text()
-    container_dependencies = set(re.findall(r"(?m)^FROM\s+(\S+)", dockerfile))
+    container_dependencies = set(
+        re.findall(r"(?m)^FROM(?:\s+--\S+)*\s+(\S+)", dockerfile)
+    )
     tool_dependencies = set(
         re.findall(r'"([A-Za-z0-9_.-]+)==\$\{[A-Z0-9_]+\}"', dockerfile)
     )

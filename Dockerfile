@@ -1,4 +1,5 @@
-FROM node:22-alpine AS frontend-build
+# The Vite output is static and can be built once on the native builder.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS frontend-build
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
