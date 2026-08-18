@@ -37,8 +37,8 @@ case "$(docker run --rm --entrypoint python "$image" --version)" in
     *) echo "The production image is not using Python 3.12." >&2; exit 1 ;;
 esac
 case "$(docker run --rm --entrypoint uv "$image" --version)" in
-    "uv 0.11.29 "*) ;;
-    *) echo "The production image is not using uv 0.11.29." >&2; exit 1 ;;
+    "uv 0.12.5 "*) ;;
+    *) echo "The production image is not using uv 0.12.5." >&2; exit 1 ;;
 esac
 
 QR_IMAGE="$image" bash "$script_dir/compose_smoke.sh"
