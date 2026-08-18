@@ -226,6 +226,8 @@ def create_app() -> FastAPI:
         """Enforce logo-specific QR correction and style constraints."""
         if logo is None:
             return
+        if normalized["symbol_type"] == "micro":
+            raise LogoValidationError("Logos are not supported for Micro QR Codes.")
         if normalized["module_style"] != "square":
             raise LogoValidationError("Logos require square QR modules.")
         if normalized["error_correction"] != "H":
@@ -275,25 +277,63 @@ def create_app() -> FastAPI:
             )
         payload_type = request.get("payload_type")
         payload = request.get("payload")
-        error_correction = request.get("error_correction", "M")
+        symbol_type = request.get("symbol_type", "qr")
+        default_correction = "auto" if symbol_type == "micro" else "M"
+        error_correction = request.get("error_correction", default_correction)
         module_style = request.get("module_style", "square")
         if not isinstance(payload_type, str) or not isinstance(payload, dict):
             raise RequestValidationError(
                 [ValidationIssue("payload", "required", "Enter QR code content.")]
             )
-        if error_correction not in {"L", "M", "Q", "H"}:
+        if not isinstance(symbol_type, str) or symbol_type not in {"qr", "micro"}:
             raise RequestValidationError(
                 [
                     ValidationIssue(
-                        "error_correction", "choice", "Choose a valid correction level."
+                        "symbol_type", "choice", "Choose a supported QR code format."
                     )
                 ]
             )
-        if module_style not in {"square", "dot"}:
+        allowed_correction = (
+            {"auto", "L", "M", "Q"} if symbol_type == "micro" else {"L", "M", "Q", "H"}
+        )
+        if (
+            not isinstance(error_correction, str)
+            or error_correction not in allowed_correction
+        ):
+            raise RequestValidationError(
+                [
+                    ValidationIssue(
+                        "error_correction",
+                        "choice",
+                        "Choose a correction level supported by this QR code format.",
+                    )
+                ]
+            )
+        if not isinstance(module_style, str) or module_style not in {"square", "dot"}:
             raise RequestValidationError(
                 [
                     ValidationIssue(
                         "module_style", "choice", "Choose a supported module style."
+                    )
+                ]
+            )
+        if symbol_type == "micro" and payload_type == "wifi":
+            raise RequestValidationError(
+                [
+                    ValidationIssue(
+                        "payload_type",
+                        "unsupported",
+                        "WiFi content requires a Standard QR Code.",
+                    )
+                ]
+            )
+        if symbol_type == "micro" and module_style == "dot":
+            raise RequestValidationError(
+                [
+                    ValidationIssue(
+                        "module_style",
+                        "unsupported",
+                        "Micro QR Codes require square modules.",
                     )
                 ]
             )
@@ -310,7 +350,8 @@ def create_app() -> FastAPI:
         content = normalize_payload(payload_type, payload)
         export = parse_export_options(request)
         visual = parse_visual_options(request.get("visual"), export.output_format)
-        normalized = {
+        normalized: dict[str, object] = {
+            "symbol_type": symbol_type,
             "payload_type": payload_type,
             "content": content,
             "error_correction": error_correction,
@@ -364,6 +405,7 @@ def create_app() -> FastAPI:
             image = await app.state.render_jobs.run(
                 render_preview_job,
                 content,
+                str(normalized["symbol_type"]),
                 str(normalized["error_correction"]),
                 str(normalized["module_style"]),
                 export,
@@ -432,6 +474,7 @@ def create_app() -> FastAPI:
             data, media_type = await app.state.render_jobs.run(
                 render_download_job,
                 content,
+                str(normalized["symbol_type"]),
                 str(normalized["error_correction"]),
                 str(normalized["module_style"]),
                 export,
@@ -447,7 +490,8 @@ def create_app() -> FastAPI:
             return error_response(503, "render_busy")
         except RenderTimeoutError:
             return error_response(504, "render_timeout")
-        filename = f"qrcode-{normalized['payload_type']}.{export.output_format}"
+        prefix = "micro-qrcode" if normalized["symbol_type"] == "micro" else "qrcode"
+        filename = f"{prefix}-{normalized['payload_type']}.{export.output_format}"
         return Response(
             data,
             media_type=media_type,

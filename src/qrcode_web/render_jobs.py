@@ -11,7 +11,13 @@ import anyio.to_process
 
 from qrcode_web.exports import ExportOptions
 from qrcode_web.logos import PreparedLogo
-from qrcode_web.rendering import make_qr, render_jpg, render_pdf, render_png, render_svg
+from qrcode_web.rendering import (
+    make_code,
+    render_jpg,
+    render_pdf,
+    render_png,
+    render_svg,
+)
 from qrcode_web.visuals import VisualOptions
 
 _T = TypeVar("_T")
@@ -27,6 +33,7 @@ class RenderTimeoutError(RuntimeError):
 
 def render_preview_job(
     content: str,
+    symbol_type: str,
     error_correction: str,
     module_style: str,
     export: ExportOptions,
@@ -34,7 +41,7 @@ def render_preview_job(
     logo: PreparedLogo | None,
 ) -> bytes:
     """Render and validate a preview in an isolated worker process."""
-    code = make_qr(content, error_correction)
+    code = make_code(content, symbol_type, error_correction)
     if export.output_format == "pdf":
         render_pdf(
             code,
@@ -54,6 +61,7 @@ def render_preview_job(
 
 def render_download_job(
     content: str,
+    symbol_type: str,
     error_correction: str,
     module_style: str,
     export: ExportOptions,
@@ -61,7 +69,7 @@ def render_download_job(
     logo: PreparedLogo | None,
 ) -> tuple[bytes, str]:
     """Render one validated download in an isolated worker process."""
-    code = make_qr(content, error_correction)
+    code = make_code(content, symbol_type, error_correction)
     if export.output_format == "png":
         return (
             render_png(

@@ -24,39 +24,53 @@ from qrcode_web.logos import PreparedLogo, logo_placement
 from qrcode_web.visuals import VisualOptions
 
 
-def make_qr(content: str, error_correction: str = "M") -> segno.QRCode:
-    """Encode content as a standard QR Code within the v20 limit.
+def make_code(
+    content: str,
+    symbol_type: str = "qr",
+    error_correction: str = "M",
+) -> segno.QRCode:
+    """Encode content as a standard or Micro QR Code.
 
     Parameters
     ----------
     content : str
         Normalized payload content.
+    symbol_type : str, default="qr"
+        Requested QR symbol family.
     error_correction : str, default="M"
-        QR error-correction level.
+        Error-correction level, or ``auto`` for Micro QR.
 
     Returns
     -------
     segno.QRCode
-        Encoded standard Model 2 QR Code.
+        Encoded standard Model 2 or Micro QR Code.
 
     Raises
     ------
     RequestValidationError
-        If the content cannot fit in version 1 through 20.
+        If the content cannot fit in the requested symbol family.
     """
+    is_micro = symbol_type == "micro"
+    error = None if is_micro and error_correction == "auto" else error_correction
     try:
         code = segno.make(
-            content, error=error_correction, micro=False, boost_error=False
+            content,
+            error=error,
+            micro=is_micro,
+            boost_error=is_micro and error_correction == "auto",
         )
     except ValueError as error:
+        symbol_name = "Micro QR Code" if is_micro else "QR Code"
         raise RequestValidationError(
             [
                 ValidationIssue(
-                    "payload", "capacity", "This payload is too large for a QR Code."
+                    "payload",
+                    "capacity",
+                    f"This payload is too large for a {symbol_name}.",
                 )
             ]
         ) from error
-    if not isinstance(code.version, int) or code.version > 20:
+    if not is_micro and (not isinstance(code.version, int) or code.version > 20):
         raise RequestValidationError(
             [
                 ValidationIssue(
@@ -88,7 +102,7 @@ def render_png(
     Returns
     -------
     bytes
-        PNG image bytes with a four-module quiet zone.
+        PNG image bytes with the symbol's required quiet zone.
     """
     image = _render_raster(code, visual, scale, module_style, logo)
     output = BytesIO()
@@ -104,7 +118,8 @@ def _render_raster(
     logo: PreparedLogo | None,
 ) -> Image.Image:
     """Render QR modules and external border geometry to a PIL image."""
-    matrix = list(code.matrix_iter(scale=1, border=4, verbose=True))
+    quiet_zone = int(code.default_border_size)
+    matrix = list(code.matrix_iter(scale=1, border=quiet_zone, verbose=True))
     qr_size = len(matrix) * scale
     has_border = visual.border_type != "quiet"
     gap = 2 * scale if has_border else 0
@@ -143,7 +158,7 @@ def _place_raster_logo(
 ) -> None:
     """Composite a sanitized logo over an opaque white module-aligned backing."""
     placement = logo_placement(code)
-    symbol_origin = qr_offset + 4 * scale
+    symbol_origin = qr_offset + int(code.default_border_size) * scale
     backing_xy = symbol_origin + placement.backing_start * scale
     backing_size = placement.backing_modules * scale
     draw = ImageDraw.Draw(image)
@@ -229,7 +244,7 @@ def render_svg(
     Returns
     -------
     bytes
-        SVG image bytes with a four-module quiet zone.
+        SVG image bytes with the symbol's required quiet zone.
     """
     return _render_svg_geometry(code, visual, scale, module_style, logo)
 
@@ -244,7 +259,8 @@ def _render_svg_geometry(
     """Render classified QR modules and external frame as SVG geometry."""
     pixel_scale = scale
     scale = 1
-    matrix = list(code.matrix_iter(scale=1, border=4, verbose=True))
+    quiet_zone = int(code.default_border_size)
+    matrix = list(code.matrix_iter(scale=1, border=quiet_zone, verbose=True))
     qr_size = len(matrix) * scale
     has_border = visual.border_type != "quiet"
     gap = 2 * scale if has_border else 0
@@ -310,7 +326,7 @@ def _add_svg_logo(
 ) -> None:
     """Embed a sanitized logo and opaque white backing in an SVG document."""
     placement = logo_placement(code)
-    symbol_origin = qr_offset + 4 * scale
+    symbol_origin = qr_offset + int(code.default_border_size) * scale
     backing_xy = symbol_origin + placement.backing_start * scale
     backing_size = placement.backing_modules * scale
     logo_size = placement.logo_modules * scale
@@ -446,7 +462,8 @@ def render_pdf(
     page_size = A4 if options.page_size == "a4" else letter
     if options.orientation == "landscape":
         page_size = landscape(page_size)
-    matrix = [list(row) for row in code.matrix_iter(border=4, verbose=True)]
+    quiet_zone = int(code.default_border_size)
+    matrix = [list(row) for row in code.matrix_iter(border=quiet_zone, verbose=True)]
     module_count = len(matrix)
     symbol_size = options.symbol_size_mm * mm
     module_size = symbol_size / module_count
@@ -622,8 +639,9 @@ def _draw_pdf_logo(
 ) -> None:
     """Draw an opaque logo backing and sanitized logo in vector PDF layout."""
     placement = logo_placement(code)
-    symbol_x = qr_x + 4 * module_size
-    symbol_y = qr_y + 4 * module_size
+    quiet_zone = int(code.default_border_size)
+    symbol_x = qr_x + quiet_zone * module_size
+    symbol_y = qr_y + quiet_zone * module_size
     backing_x = symbol_x + placement.backing_start * module_size
     backing_y = symbol_y + placement.backing_start * module_size
     backing_size = placement.backing_modules * module_size

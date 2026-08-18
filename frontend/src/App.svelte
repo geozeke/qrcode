@@ -7,10 +7,12 @@
     type FieldErrors,
     type OutputFormat,
     type PayloadType,
+    type SymbolType,
     type Theme,
   } from './forms';
 
   const app_name = 'QR Code Generator';
+  let symbol_type: SymbolType = 'qr';
   let payload_type: PayloadType = 'url';
   let url = 'https://example.com';
   let latitude = '';
@@ -42,6 +44,7 @@
   let render_token = '';
   let validated_request = '';
   let issue = '';
+  let symbol_notice = '';
   let field_errors: FieldErrors = {};
   let pending = false;
   let download_pending = false;
@@ -60,6 +63,7 @@
             ? { text }
             : { security, ssid, password: security === 'open' ? '' : password, hidden };
     return {
+      symbol_type,
       payload_type,
       payload,
       error_correction,
@@ -85,7 +89,7 @@
   }
 
   function payload_errors(): FieldErrors {
-    return validatePayload({
+    const errors = validatePayload({
       payload_type,
       url,
       latitude,
@@ -95,6 +99,10 @@
       ssid,
       password: security === 'open' ? '' : password,
     });
+    if (symbol_type === 'micro' && payload_type === 'wifi') {
+      errors.payload_type = 'WiFi content requires a Standard QR Code.';
+    }
+    return errors;
   }
 
   function clear_preview(): void {
@@ -212,6 +220,22 @@
     schedule_preview();
   }
 
+  function change_symbol_type(): void {
+    symbol_notice = '';
+    if (symbol_type === 'micro') {
+      error_correction = 'auto';
+      module_style = 'square';
+      if (logo_file) {
+        logo_file = null;
+        if (logo_input) logo_input.value = '';
+        symbol_notice = 'The logo was removed because Micro QR Codes do not support logos.';
+      }
+    } else if (error_correction === 'auto') {
+      error_correction = 'M';
+    }
+    schedule_preview();
+  }
+
   async function announce_issue(message: string): Promise<void> {
     issue = message;
     await tick();
@@ -241,7 +265,8 @@
       const href = URL.createObjectURL(file);
       const link = document.createElement('a');
       link.href = href;
-      link.download = `qrcode-${payload_type}.${output_format}`;
+      const prefix = symbol_type === 'micro' ? 'micro-qrcode' : 'qrcode';
+      link.download = `${prefix}-${payload_type}.${output_format}`;
       link.click();
       URL.revokeObjectURL(href);
     } catch {
@@ -263,6 +288,7 @@
   }
 
   function reset(): void {
+    symbol_type = 'qr';
     payload_type = 'url';
     url = 'https://example.com';
     latitude = '';
@@ -288,6 +314,7 @@
     border_width = 2;
     border_caption = '';
     logo_file = null;
+    symbol_notice = '';
     if (logo_input) logo_input.value = '';
     field_errors = {};
     invalidate_preview();
@@ -312,7 +339,7 @@
   <title>{app_name}</title>
   <meta
     name="description"
-    content="Create scanner-safe QR codes for URLs, locations, text, and WiFi networks."
+    content="Create scanner-safe Standard and Micro QR codes for URLs, locations, text, and WiFi networks."
   />
 </svelte:head>
 
@@ -344,13 +371,31 @@
     <form id="generator-form" class="panel controls-panel" on:submit|preventDefault>
       <fieldset>
         <legend>1. Content</legend>
+        <label for="symbol-type">Code format</label>
+        <select id="symbol-type" bind:value={symbol_type} on:change={change_symbol_type}>
+          <option value="qr">Standard QR Code</option>
+          <option value="micro">Micro QR Code</option>
+        </select>
+        <span class="help">
+          Micro QR is intended for short content and uses a compact two-module quiet zone.
+        </span>
+        {#if symbol_notice}<span class="field-error" role="status">{symbol_notice}</span>{/if}
         <label for="payload-type">QR content type</label>
-        <select id="payload-type" bind:value={payload_type} on:change={schedule_preview}>
+        <select
+          id="payload-type"
+          aria-describedby={field_errors.payload_type ? 'payload-type-error' : undefined}
+          aria-invalid={field_errors.payload_type ? 'true' : undefined}
+          bind:value={payload_type}
+          on:change={schedule_preview}
+        >
           <option value="url">Website URL</option>
           <option value="geo">Location</option>
           <option value="text">Plain text</option>
-          <option value="wifi">WiFi hotspot</option>
+          <option disabled={symbol_type === 'micro'} value="wifi">WiFi hotspot</option>
         </select>
+        {#if field_errors.payload_type}<span id="payload-type-error" class="field-error"
+            >{field_errors.payload_type}</span
+          >{/if}
 
         {#if payload_type === 'url'}
           <label for="url">URL</label>
@@ -409,8 +454,7 @@
             bind:value={text}
             maxlength="1000"
             on:input={schedule_preview}
-            rows="5"
-          ></textarea>
+            rows="5"></textarea>
           <span id="text-count" class:field-error={field_errors.text} class="help"
             >{new TextEncoder().encode(text).length} of 1,000 UTF-8 bytes</span
           >
@@ -476,9 +520,16 @@
               bind:value={error_correction}
               on:change={schedule_preview}
             >
-              <option value="L">L — low</option><option value="M">M — medium</option><option
-                value="Q">Q — quartile</option
-              ><option value="H">H — high</option>
+              {#if symbol_type === 'micro'}
+                <option value="auto">Auto — compact, strongest available</option>
+                <option value="L">L — low</option>
+                <option value="M">M — medium</option>
+                <option value="Q">Q — quartile</option>
+              {:else}
+                <option value="L">L — low</option><option value="M">M — medium</option><option
+                  value="Q">Q — quartile</option
+                ><option value="H">H — high</option>
+              {/if}
             </select>
           </div>
           <div>
@@ -486,6 +537,7 @@
             <select
               id="module-style"
               bind:value={module_style}
+              disabled={symbol_type === 'micro'}
               on:change={() => {
                 if (module_style === 'dot' && !['Q', 'H'].includes(error_correction))
                   error_correction = 'Q';
@@ -494,6 +546,9 @@
             >
               <option value="square">Square</option><option value="dot">Dot</option>
             </select>
+            {#if symbol_type === 'micro'}<span class="help"
+                >Micro QR Codes require square modules.</span
+              >{/if}
           </div>
         </div>
         <div class="field-grid">
@@ -585,6 +640,7 @@
           accept="image/png,image/jpeg"
           aria-describedby="logo-help"
           bind:this={logo_input}
+          disabled={symbol_type === 'micro'}
           on:change={(event) => {
             logo_file = event.currentTarget.files?.[0] ?? null;
             if (logo_file) {
@@ -596,7 +652,9 @@
           type="file"
         />
         <span id="logo-help" class="help"
-          >Up to 5 MiB. Adding a logo selects square modules and H correction.</span
+          >{symbol_type === 'micro'
+            ? 'Logos are unavailable for Micro QR Codes.'
+            : 'Up to 5 MiB. Adding a logo selects square modules and H correction.'}</span
         >
       </fieldset>
 
@@ -690,7 +748,12 @@
         {:else if issue}<div bind:this={status_element} class="issue" role="alert" tabindex="-1">
             <strong>Preview unavailable</strong><span>{issue}</span>
           </div>
-        {:else if preview_url}<img alt="Generated QR code preview" src={preview_url} />
+        {:else if preview_url}<img
+            alt={symbol_type === 'micro'
+              ? 'Generated Micro QR code preview'
+              : 'Generated QR code preview'}
+            src={preview_url}
+          />
         {:else}<p class="empty-state">Enter valid content to see your QR code.</p>{/if}
       </div>
       <p class="preview-note">The downloaded file uses this exact validated preview state.</p>

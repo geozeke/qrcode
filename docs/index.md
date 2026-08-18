@@ -7,8 +7,9 @@
 />
 
 QR Code Generator is a focused, self-hostable web utility for creating
-scanner-safe QR codes. It accepts website URLs, geographic coordinates,
-plain text, and WiFi network details.
+scanner-safe Standard and Micro QR codes. Standard QR accepts website
+URLs, geographic coordinates, plain text, and WiFi network details;
+Micro QR supports short URL, location, and plain-text payloads.
 
 Generated codes can use square or dot modules, configurable colors,
 frames, captions, and an optional logo. Exports are available as PNG,

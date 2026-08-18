@@ -33,6 +33,62 @@ describe('QR generator interface', () => {
     expect(foreground).toHaveValue('#000000');
   });
 
+  it('serializes Micro QR state and applies its safe controls', async () => {
+    render(App);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    await fireEvent.change(screen.getByRole('combobox', { name: 'QR content type' }), {
+      target: { value: 'text' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Text' }), {
+      target: { value: 'HELLO' },
+    });
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Code format' }), {
+      target: { value: 'micro' },
+    });
+
+    expect(screen.getByRole('combobox', { name: 'Error correction' })).toHaveValue('auto');
+    expect(screen.getByRole('combobox', { name: 'Module style' })).toBeDisabled();
+    expect(screen.getByLabelText(/^Logo/)).toBeDisabled();
+    expect(screen.getByRole('option', { name: 'WiFi hotspot' })).toBeDisabled();
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 1000 });
+
+    const request = (fetch as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit;
+    const body = request.body as FormData;
+    expect(JSON.parse(body.get('request') as string)).toMatchObject({
+      symbol_type: 'micro',
+      payload_type: 'text',
+      error_correction: 'auto',
+      module_style: 'square',
+    });
+    await waitFor(() =>
+      expect(screen.getByAltText('Generated Micro QR code preview')).toBeInTheDocument(),
+    );
+  });
+
+  it('keeps an existing WiFi selection invalid when Micro QR is selected', async () => {
+    render(App);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    const payloadType = screen.getByRole('combobox', { name: 'QR content type' });
+    await fireEvent.change(payloadType, { target: { value: 'wifi' } });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Network name (SSID)' }), {
+      target: { value: 'Office' },
+    });
+    await fireEvent.input(screen.getByLabelText('Password'), {
+      target: { value: 'password123' },
+    });
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 1000 });
+
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Code format' }), {
+      target: { value: 'micro' },
+    });
+    expect(payloadType).toHaveValue('wifi');
+    expect(payloadType).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText('WiFi content requires a Standard QR Code.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Download PNG' })).toBeDisabled();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('shows field validation and does not render incomplete content', async () => {
     render(App);
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));

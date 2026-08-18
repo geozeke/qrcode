@@ -39,6 +39,17 @@ test('generates a URL code and downloads the validated state', async ({ page }) 
   expect((await download).suggestedFilename()).toBe('qrcode-url.png');
 });
 
+test('generates and downloads an explicit Micro QR code', async ({ page }) => {
+  await page.getByRole('combobox', { name: 'QR content type' }).selectOption('text');
+  await page.getByRole('textbox', { name: 'Text' }).fill('HELLO');
+  await page.getByRole('combobox', { name: 'Code format' }).selectOption('micro');
+  await expect(page.getByRole('combobox', { name: 'Error correction' })).toHaveValue('auto');
+  await expect(page.getByAltText('Generated Micro QR code preview')).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PNG' }).click();
+  expect((await download).suggestedFilename()).toBe('micro-qrcode-text.png');
+});
+
 test('validates each first-release payload workflow', async ({ page }) => {
   const type = page.getByRole('combobox', { name: 'QR content type' });
 
