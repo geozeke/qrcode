@@ -6,6 +6,21 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-08-27
+
+[Compare with 0.2.1](https://github.com/geozeke/qrcode/compare/v0.2.1...v0.2.2)
+
+### Deployment & Operations
+
+- Update uv in CI and image to 0.12.5 (#79) ([24a0c23](https://github.com/geozeke/qrcode/commit/24a0c23383bd24b179edbbf803ba62b58d429eae))
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group with 4 updates (#82) ([ba21023](https://github.com/geozeke/qrcode/commit/ba210239fc79b0755ffc635fae03a0cb0881bcbc))
+- *(deps)* Bump github/codeql-action from 4.37.6 to 4.37.8 ([e7c5a57](https://github.com/geozeke/qrcode/commit/e7c5a57ef29265aa76141a59add870e8f0b459bf))
+- *(deps)* Bump astral-sh/setup-uv from 9.0.0 to 10.0.1 ([19a1fb4](https://github.com/geozeke/qrcode/commit/19a1fb4033530adcb639f63cf078ad8cefe471c8))
+- *(deps-dev)* Bump the frontend-dependencies group ([74b9b8c](https://github.com/geozeke/qrcode/commit/74b9b8c1628113a2e85d6bc5a4f2db1b50d4eaf4))
+
 ## [0.2.1] - 2026-08-18
 
 [Compare with 0.2.0](https://github.com/geozeke/qrcode/compare/v0.2.0...v0.2.1)
