@@ -6,6 +6,15 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-09-01
+
+[Compare with 0.2.2](https://github.com/geozeke/qrcode/compare/v0.2.2...v0.2.3)
+
+### Dependencies
+
+- *(deps-dev)* Bump the python-dependencies group with 3 updates (#88) ([5cb4e9d](https://github.com/geozeke/qrcode/commit/5cb4e9d9042af109d60de419b10fe381dcc8a17d))
+- *(deps-dev)* Bump types-reportlab (#89) ([7c0a5d6](https://github.com/geozeke/qrcode/commit/7c0a5d66b5152dd1884a3bdddec79b4a2777262f))
+
 ## [0.2.2] - 2026-08-27
 
 [Compare with 0.2.1](https://github.com/geozeke/qrcode/compare/v0.2.1...v0.2.2)
