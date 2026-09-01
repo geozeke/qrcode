@@ -1,6 +1,6 @@
 [project]
 name = "qrcode-web"
-version = "0.2.2"
+version = "0.2.3"
 description = "Self-hosted QR code generator web application"
 readme = "README.md"
 authors = [{ name = "Peter Nardi" }]
