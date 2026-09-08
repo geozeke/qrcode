@@ -6,6 +6,18 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-09-08
+
+[Compare with 0.2.3](https://github.com/geozeke/qrcode/compare/v0.2.3...v0.2.4)
+
+### Dependencies
+
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 4 updates ([ea28093](https://github.com/geozeke/qrcode/commit/ea280938eb807fd24f45eb1adfe646248d929f26))
+- *(deps)* Bump github/codeql-action from 4.37.8 to 4.37.9 ([258b2e4](https://github.com/geozeke/qrcode/commit/258b2e4667ca93de6c533f1540d106a831b03088))
+- *(deps)* Bump the python-dependencies group with 4 updates (#94) ([761dd82](https://github.com/geozeke/qrcode/commit/761dd82ffec3b56ad8bc28128ac1f646aa096dfd))
+- *(deps-dev)* Bump vitest from 4.1.11 to 5.0.0 in /frontend ([67f2c89](https://github.com/geozeke/qrcode/commit/67f2c89160803a20db1e543260d6b24faa5e82f2))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 5 updates ([231fcb3](https://github.com/geozeke/qrcode/commit/231fcb32ef69ecbc9b9427a0a1b1c8a293b84f12))
+
 ## [0.2.3] - 2026-09-01
 
 [Compare with 0.2.2](https://github.com/geozeke/qrcode/compare/v0.2.2...v0.2.3)
