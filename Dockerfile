@@ -18,7 +18,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080
 
 WORKDIR /app
-RUN groupadd --gid 10001 qrcode \
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 qrcode \
     && useradd --uid 10001 --gid qrcode --create-home qrcode
 RUN pip install --no-cache-dir "uv==${UV_VERSION}"
 
