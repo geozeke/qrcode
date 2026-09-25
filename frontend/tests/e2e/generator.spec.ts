@@ -68,6 +68,22 @@ test('validates each first-release payload workflow', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Download PNG' })).toBeEnabled();
 });
 
+test('imports an editable single-contact vCard', async ({ page }) => {
+  await page.getByRole('combobox', { name: 'QR content type' }).selectOption('vcard');
+  await page.getByLabel(/^Import contact/).setInputFiles({
+    name: 'ada.vcf',
+    mimeType: 'text/vcard',
+    buffer: Buffer.from(
+      'BEGIN:VCARD\r\nVERSION:3.0\r\nN:Lovelace;Ada;;;\r\nFN:Ada Lovelace\r\nEMAIL:ada@example.com\r\nEND:VCARD\r\n',
+    ),
+  });
+
+  await expect(page.getByRole('textbox', { name: 'Given name' })).toHaveValue('Ada');
+  await page.getByRole('textbox', { name: 'Work title' }).fill('Mathematician');
+  await expect(page.getByRole('button', { name: 'Download PNG' })).toBeEnabled();
+  await expect(page.getByRole('status')).toContainText('Contact imported');
+});
+
 test('keeps theme changes separate from generated colors', async ({ page }) => {
   const foreground = page.getByRole('textbox', { name: 'Foreground color hex value' });
   await expect(foreground).toHaveValue('#000000');

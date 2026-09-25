@@ -37,12 +37,31 @@ generated QR code; they are not stored or logged by the application.
 WiFi payloads require Standard QR because even the shortest valid WiFi
 payload exceeds Micro QR capacity.
 
+### Digital business card
+
+Enter a structured contact manually or import one UTF-8 `.vcf` file up
+to 64 KiB. Imports accept a single vCard 3.0 or 4.0 contact and populate
+the same editable fields used for manual entry. The source file stays in
+the browser; previews and downloads send only the resulting supported
+fields to the application.
+
+The generated QR code contains a canonical vCard 3.0 contact. It can
+include a given and family name, mobile phone, email, company, work
+title, work phone, fax, one work address, and website. At least one name
+is required. Unsupported imported properties and extra values are
+omitted with an on-screen notice.
+
+Files containing multiple contacts, unsupported vCard versions, legacy
+encoded values, or invalid UTF-8 are rejected. Split a multi-contact
+file and import one contact at a time. vCards require Standard QR.
+
 ## Code formats
 
 Standard QR is the default and supports every content and appearance
 option. Micro QR is an explicit compact format for short URLs,
-locations, and plain text. Payloads that exceed its M4 capacity are
-rejected before download.
+locations, and plain text. WiFi and vCard payloads require Standard QR.
+Payloads that exceed Micro QR's M4 capacity are rejected before
+download.
 
 Micro QR correction can be Automatic, L, M, or Q. Automatic permits the
 smallest M1 symbol when possible and otherwise chooses the strongest

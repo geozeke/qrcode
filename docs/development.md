@@ -107,6 +107,13 @@ license validation. Browser and Docker deployment suites remain separate
 because they require additional host services or installed browser
 binaries.
 
+For vCard changes, supplement automated QR decoding with manual imports
+on current iOS and Android devices. Test both manually entered and
+`.vcf`-imported contacts in Apple Contacts and Google Contacts. Verify
+the structured name, phone labels, email, company and title, work
+address, and website, and record the device, OS, scanner, and contact
+application versions in the pull request.
+
 Run the complete on-host deployment gate with:
 
 ```console

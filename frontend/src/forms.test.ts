@@ -11,6 +11,20 @@ function fields(overrides: Partial<PayloadFields> = {}): PayloadFields {
     security: 'wpa',
     ssid: '',
     password: '',
+    given_name: '',
+    family_name: '',
+    personal_phone: '',
+    email: '',
+    company: '',
+    work_title: '',
+    work_phone: '',
+    fax: '',
+    street: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: '',
+    website_url: '',
     ...overrides,
   };
 }
@@ -51,6 +65,23 @@ describe('payload validation', () => {
         fields({ payload_type: 'wifi', security: 'wpa', ssid: 'Office', password: 'short' }),
       ).password,
     ).toBeDefined();
+  });
+
+  it('validates vCard names, email, website, and byte limits', () => {
+    expect(validatePayload(fields({ payload_type: 'vcard', given_name: 'Ada' }))).toEqual({});
+    expect(validatePayload(fields({ payload_type: 'vcard' })).given_name).toBeDefined();
+    expect(
+      validatePayload({
+        ...fields({ payload_type: 'vcard', family_name: 'Lovelace' }),
+        email: 'invalid',
+        website_url: 'ftp://example.com',
+        company: '界'.repeat(86),
+      }),
+    ).toMatchObject({
+      email: expect.any(String),
+      website_url: expect.any(String),
+      company: expect.any(String),
+    });
   });
 });
 

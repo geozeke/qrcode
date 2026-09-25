@@ -10,6 +10,7 @@
     type SymbolType,
     type Theme,
   } from './forms';
+  import { readVCardFile } from './vcard';
 
   const app_name = 'QR Code Generator';
   let symbol_type: SymbolType = 'qr';
@@ -22,6 +23,22 @@
   let ssid = '';
   let password = '';
   let hidden = false;
+  let given_name = '';
+  let family_name = '';
+  let personal_phone = '';
+  let email = '';
+  let company = '';
+  let work_title = '';
+  let work_phone = '';
+  let fax = '';
+  let street = '';
+  let city = '';
+  let state = '';
+  let postal_code = '';
+  let country = '';
+  let website_url = '';
+  let vcard_import_status = '';
+  let vcard_input: HTMLInputElement;
   let error_correction = 'M';
   let module_style = 'square';
   let output_format: OutputFormat = 'png';
@@ -61,7 +78,24 @@
           ? { latitude: roundCoordinate(latitude), longitude: roundCoordinate(longitude) }
           : payload_type === 'text'
             ? { text }
-            : { security, ssid, password: security === 'open' ? '' : password, hidden };
+            : payload_type === 'vcard'
+              ? {
+                  given_name,
+                  family_name,
+                  personal_phone,
+                  email,
+                  company,
+                  work_title,
+                  work_phone,
+                  fax,
+                  street,
+                  city,
+                  state,
+                  postal_code,
+                  country,
+                  website_url,
+                }
+              : { security, ssid, password: security === 'open' ? '' : password, hidden };
     return {
       symbol_type,
       payload_type,
@@ -98,11 +132,45 @@
       security,
       ssid,
       password: security === 'open' ? '' : password,
+      given_name,
+      family_name,
+      personal_phone,
+      email,
+      company,
+      work_title,
+      work_phone,
+      fax,
+      street,
+      city,
+      state,
+      postal_code,
+      country,
+      website_url,
     });
-    if (symbol_type === 'micro' && payload_type === 'wifi') {
-      errors.payload_type = 'WiFi content requires a Standard QR Code.';
+    if (symbol_type === 'micro' && ['wifi', 'vcard'].includes(payload_type)) {
+      errors.payload_type =
+        payload_type === 'wifi'
+          ? 'WiFi content requires a Standard QR Code.'
+          : 'vCards require a Standard QR Code.';
     }
     return errors;
+  }
+
+  function vcard_detail_error(): string {
+    const fields = [
+      'family_name',
+      'personal_phone',
+      'company',
+      'work_title',
+      'work_phone',
+      'fax',
+      'street',
+      'city',
+      'state',
+      'postal_code',
+      'country',
+    ];
+    return fields.map((field) => field_errors[field]).find(Boolean) ?? '';
   }
 
   function clear_preview(): void {
@@ -220,6 +288,47 @@
     schedule_preview();
   }
 
+  async function import_vcard(file: File | undefined): Promise<void> {
+    if (!file) return;
+    vcard_import_status = '';
+    try {
+      const imported = await readVCardFile(file);
+      ({
+        given_name,
+        family_name,
+        personal_phone,
+        email,
+        company,
+        work_title,
+        work_phone,
+        fax,
+        street,
+        city,
+        state,
+        postal_code,
+        country,
+        website_url,
+      } = imported.fields);
+      const notices = [];
+      if (imported.omittedProperties.length) {
+        notices.push(
+          `Omitted unsupported or extra properties: ${imported.omittedProperties.join(', ')}.`,
+        );
+      }
+      if (imported.usedFallbackAddress)
+        notices.push('The imported address will be labeled as work.');
+      vcard_import_status = notices.length
+        ? `Contact imported. ${notices.join(' ')}`
+        : 'Contact imported. Review the fields before downloading.';
+      schedule_preview();
+    } catch (error) {
+      vcard_import_status =
+        error instanceof Error ? error.message : 'Could not import the .vcf file.';
+    } finally {
+      if (vcard_input) vcard_input.value = '';
+    }
+  }
+
   function change_symbol_type(): void {
     symbol_notice = '';
     if (symbol_type === 'micro') {
@@ -298,6 +407,21 @@
     ssid = '';
     password = '';
     hidden = false;
+    given_name = '';
+    family_name = '';
+    personal_phone = '';
+    email = '';
+    company = '';
+    work_title = '';
+    work_phone = '';
+    fax = '';
+    street = '';
+    city = '';
+    state = '';
+    postal_code = '';
+    country = '';
+    website_url = '';
+    vcard_import_status = '';
     error_correction = 'M';
     module_style = 'square';
     output_format = 'png';
@@ -316,6 +440,7 @@
     logo_file = null;
     symbol_notice = '';
     if (logo_input) logo_input.value = '';
+    if (vcard_input) vcard_input.value = '';
     field_errors = {};
     invalidate_preview();
     void refresh_preview();
@@ -339,7 +464,7 @@
   <title>{app_name}</title>
   <meta
     name="description"
-    content="Create scanner-safe Standard and Micro QR codes for URLs, locations, text, and WiFi networks."
+    content="Create scanner-safe Standard and Micro QR codes for URLs, locations, text, WiFi networks, and digital business cards."
   />
 </svelte:head>
 
@@ -392,6 +517,7 @@
           <option value="geo">Location</option>
           <option value="text">Plain text</option>
           <option disabled={symbol_type === 'micro'} value="wifi">WiFi hotspot</option>
+          <option disabled={symbol_type === 'micro'} value="vcard">Digital business card</option>
         </select>
         {#if field_errors.payload_type}<span id="payload-type-error" class="field-error"
             >{field_errors.payload_type}</span
@@ -458,6 +584,197 @@
           <span id="text-count" class:field-error={field_errors.text} class="help"
             >{new TextEncoder().encode(text).length} of 1,000 UTF-8 bytes</span
           >
+        {:else if payload_type === 'vcard'}
+          <label for="vcard-file"
+            >Import contact <span class="optional">Optional · .vcf</span></label
+          >
+          <input
+            id="vcard-file"
+            accept=".vcf,text/vcard,text/x-vcard"
+            aria-describedby="vcard-file-help"
+            bind:this={vcard_input}
+            on:change={(event) => void import_vcard(event.currentTarget.files?.[0])}
+            type="file"
+          />
+          <span id="vcard-file-help" class="help">
+            Imports one UTF-8 vCard 3.0 or 4.0 file up to 64 KiB into the editable fields below.
+          </span>
+          {#if vcard_import_status}<span class="help" role="status">{vcard_import_status}</span
+            >{/if}
+
+          <div class="field-grid">
+            <div>
+              <label for="given-name">Given name</label>
+              <input
+                id="given-name"
+                aria-describedby={field_errors.given_name ? 'given-name-error' : 'name-help'}
+                aria-invalid={field_errors.given_name ? 'true' : undefined}
+                autocomplete="given-name"
+                bind:value={given_name}
+                on:input={schedule_preview}
+              />
+              {#if field_errors.given_name}<span id="given-name-error" class="field-error"
+                  >{field_errors.given_name}</span
+                >{/if}
+            </div>
+            <div>
+              <label for="family-name">Family name</label>
+              <input
+                id="family-name"
+                aria-describedby={field_errors.family_name ? 'vcard-details-error' : 'name-help'}
+                aria-invalid={field_errors.family_name ? 'true' : undefined}
+                autocomplete="family-name"
+                bind:value={family_name}
+                on:input={schedule_preview}
+              />
+            </div>
+          </div>
+          <span id="name-help" class="help">Enter at least one name.</span>
+
+          <div class="field-grid">
+            <div>
+              <label for="personal-phone">Mobile phone <span class="optional">Optional</span></label
+              >
+              <input
+                id="personal-phone"
+                aria-describedby={field_errors.personal_phone ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.personal_phone ? 'true' : undefined}
+                autocomplete="tel"
+                bind:value={personal_phone}
+                on:input={schedule_preview}
+                type="tel"
+              />
+            </div>
+            <div>
+              <label for="contact-email">Email <span class="optional">Optional</span></label>
+              <input
+                id="contact-email"
+                aria-describedby={field_errors.email ? 'contact-email-error' : undefined}
+                aria-invalid={field_errors.email ? 'true' : undefined}
+                autocomplete="email"
+                bind:value={email}
+                on:input={schedule_preview}
+                type="email"
+              />
+              {#if field_errors.email}<span id="contact-email-error" class="field-error"
+                  >{field_errors.email}</span
+                >{/if}
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div>
+              <label for="company">Company <span class="optional">Optional</span></label><input
+                id="company"
+                aria-describedby={field_errors.company ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.company ? 'true' : undefined}
+                autocomplete="organization"
+                bind:value={company}
+                on:input={schedule_preview}
+              />
+            </div>
+            <div>
+              <label for="work-title">Work title <span class="optional">Optional</span></label
+              ><input
+                id="work-title"
+                aria-describedby={field_errors.work_title ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.work_title ? 'true' : undefined}
+                autocomplete="organization-title"
+                bind:value={work_title}
+                on:input={schedule_preview}
+              />
+            </div>
+            <div>
+              <label for="work-phone">Work phone <span class="optional">Optional</span></label
+              ><input
+                id="work-phone"
+                aria-describedby={field_errors.work_phone ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.work_phone ? 'true' : undefined}
+                autocomplete="work tel"
+                bind:value={work_phone}
+                on:input={schedule_preview}
+                type="tel"
+              />
+            </div>
+            <div>
+              <label for="fax">Work fax <span class="optional">Optional</span></label><input
+                id="fax"
+                aria-describedby={field_errors.fax ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.fax ? 'true' : undefined}
+                bind:value={fax}
+                on:input={schedule_preview}
+                type="tel"
+              />
+            </div>
+          </div>
+
+          <label for="street">Work street address <span class="optional">Optional</span></label>
+          <input
+            id="street"
+            aria-describedby={field_errors.street ? 'vcard-details-error' : undefined}
+            aria-invalid={field_errors.street ? 'true' : undefined}
+            autocomplete="street-address"
+            bind:value={street}
+            on:input={schedule_preview}
+          />
+          <div class="field-grid">
+            <div>
+              <label for="city">City</label><input
+                id="city"
+                aria-describedby={field_errors.city ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.city ? 'true' : undefined}
+                autocomplete="address-level2"
+                bind:value={city}
+                on:input={schedule_preview}
+              />
+            </div>
+            <div>
+              <label for="state">State or region</label><input
+                id="state"
+                aria-describedby={field_errors.state ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.state ? 'true' : undefined}
+                autocomplete="address-level1"
+                bind:value={state}
+                on:input={schedule_preview}
+              />
+            </div>
+            <div>
+              <label for="postal-code">Postal code</label><input
+                id="postal-code"
+                aria-describedby={field_errors.postal_code ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.postal_code ? 'true' : undefined}
+                autocomplete="postal-code"
+                bind:value={postal_code}
+                on:input={schedule_preview}
+              />
+            </div>
+            <div>
+              <label for="country">Country</label><input
+                id="country"
+                aria-describedby={field_errors.country ? 'vcard-details-error' : undefined}
+                aria-invalid={field_errors.country ? 'true' : undefined}
+                autocomplete="country-name"
+                bind:value={country}
+                on:input={schedule_preview}
+              />
+            </div>
+          </div>
+          <label for="website-url">Website <span class="optional">Optional</span></label>
+          <input
+            id="website-url"
+            aria-describedby={field_errors.website_url ? 'website-url-error' : undefined}
+            aria-invalid={field_errors.website_url ? 'true' : undefined}
+            autocomplete="url"
+            bind:value={website_url}
+            inputmode="url"
+            on:input={schedule_preview}
+          />
+          {#if field_errors.website_url}<span id="website-url-error" class="field-error"
+              >{field_errors.website_url}</span
+            >{/if}
+          {#if vcard_detail_error()}<span id="vcard-details-error" class="field-error"
+              >{vcard_detail_error()}</span
+            >{/if}
         {:else}
           <label for="security">Security</label>
           <select

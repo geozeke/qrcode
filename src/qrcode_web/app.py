@@ -317,13 +317,18 @@ def create_app() -> FastAPI:
                     )
                 ]
             )
-        if symbol_type == "micro" and payload_type == "wifi":
+        if symbol_type == "micro" and payload_type in {"wifi", "vcard"}:
+            message = (
+                "WiFi content requires a Standard QR Code."
+                if payload_type == "wifi"
+                else "vCards require a Standard QR Code."
+            )
             raise RequestValidationError(
                 [
                     ValidationIssue(
                         "payload_type",
                         "unsupported",
-                        "WiFi content requires a Standard QR Code.",
+                        message,
                     )
                 ]
             )

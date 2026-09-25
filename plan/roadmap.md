@@ -59,32 +59,13 @@ Acceptance gates:
 - The feature includes keyboard-accessible controls and clear provider
   attribution.
 
-### Digital Business Cards
+### Digital Business Cards (Implemented)
 
-Add digital business cards encoded as vCards.
-
-Candidate fields:
-
-- Full name, personal phone, email address, company, work title, work
-  phone, fax, street, city, state, country, postal code, and website URL.
-
-Design gates:
-
-- Choose vCard 3.0 or 4.0 based on scanner and contact-application
-  compatibility tests.
-- Decide how personal and work phone numbers are labeled when both are
-  present.
-- Decide whether the first implementation supports one address or a
-  collection of typed addresses.
-- Define required fields, escaping, normalization, and practical QR
-  density limits before exposing the form.
-
-Acceptance gates:
-
-- Representative exports import correctly into major mobile contact
-  applications.
-- Optional fields are omitted cleanly and user-entered text cannot
-  break the vCard structure.
+Digital business cards use canonical vCard 3.0 output with structured
+names, typed personal and work phone numbers, and one work address.
+Users can enter supported fields manually or import one vCard 3.0 or
+4.0 `.vcf` contact into the editable form. Input is escaped and bounded,
+optional fields are omitted, and vCards require Standard QR.
 
 ### Communication And Event Payloads
 
