@@ -123,10 +123,10 @@ docker compose logs --follow qrcode
 
 ## Update the application
 
-Retrieve the current published image and replace the container with the
-same startup command:
+Update the application with:
 
 ```console
+docker compose pull
 docker compose up --force-recreate -d
 ```
 
