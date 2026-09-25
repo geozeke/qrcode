@@ -1,4 +1,4 @@
-export type PayloadType = 'url' | 'geo' | 'text' | 'wifi';
+export type PayloadType = 'url' | 'geo' | 'text' | 'wifi' | 'vcard';
 export type SymbolType = 'qr' | 'micro';
 export type OutputFormat = 'png' | 'jpg' | 'svg' | 'pdf';
 export type Theme = 'light' | 'dark';
@@ -12,6 +12,20 @@ export interface PayloadFields {
   security: string;
   ssid: string;
   password: string;
+  given_name: string;
+  family_name: string;
+  personal_phone: string;
+  email: string;
+  company: string;
+  work_title: string;
+  work_phone: string;
+  fax: string;
+  street: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  website_url: string;
 }
 
 export type FieldErrors = Partial<Record<string, string>>;
@@ -27,6 +41,44 @@ function containsControl(value: string): boolean {
     const code = character.charCodeAt(0);
     return code < 32 || code === 127;
   });
+}
+
+const vcardFields = [
+  'given_name',
+  'family_name',
+  'personal_phone',
+  'email',
+  'company',
+  'work_title',
+  'work_phone',
+  'fax',
+  'street',
+  'city',
+  'state',
+  'postal_code',
+  'country',
+  'website_url',
+] as const;
+
+function validEmail(value: string): boolean {
+  if (
+    [...value].some((character) => /\s/.test(character)) ||
+    /[\\,;]/.test(value) ||
+    value.split('@').length !== 2
+  ) {
+    return false;
+  }
+  const [local, domain] = value.split('@');
+  return Boolean(local && domain && !local.startsWith('.') && !domain.startsWith('.'));
+}
+
+function validHttpUrl(value: string): boolean {
+  try {
+    const candidate = new URL(value.includes('://') ? value : `https://${value}`);
+    return ['http:', 'https:'].includes(candidate.protocol) && Boolean(candidate.hostname);
+  } catch {
+    return false;
+  }
 }
 
 export function roundCoordinate(value: string): string {
@@ -88,6 +140,24 @@ export function validatePayload(fields: PayloadFields): FieldErrors {
     const size = byteLength(fields.text);
     if (size < 1 || size > 1000) {
       errors.text = 'Enter between 1 and 1,000 UTF-8 bytes of text.';
+    }
+  } else if (fields.payload_type === 'vcard') {
+    if (!fields.given_name.trim() && !fields.family_name.trim()) {
+      errors.given_name = 'Enter a given or family name.';
+    }
+    for (const name of vcardFields) {
+      const value = fields[name].trim();
+      if (byteLength(value) > 255) {
+        errors[name] = 'Enter no more than 255 UTF-8 bytes.';
+      } else if (containsControl(value.replace(/[\r\n]/g, ''))) {
+        errors[name] = 'Remove control characters.';
+      }
+    }
+    const email = fields.email.trim();
+    if (email && !validEmail(email)) errors.email = 'Enter a valid email address.';
+    const website = fields.website_url.trim();
+    if (website && !validHttpUrl(website)) {
+      errors.website_url = 'Enter a valid HTTP or HTTPS URL.';
     }
   } else {
     const ssidSize = byteLength(fields.ssid);

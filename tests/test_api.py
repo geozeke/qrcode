@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree
 
+import zxingcpp
 from fastapi.testclient import TestClient
 from PIL import Image
 
@@ -80,6 +81,47 @@ def test_preview_and_matching_png_download(monkeypatch: object) -> None:
         assert download.status_code == 200
         assert download.headers["content-type"] == "image/png"
         assert "qrcode-url.png" in download.headers["content-disposition"]
+
+
+def test_vcard_preview_download_and_micro_rejection(monkeypatch: object) -> None:
+    """VCards render, decode, download distinctly, and require Standard QR."""
+    monkeypatch.setenv("QR_RENDER_TOKEN_SECRET", "a" * 32)  # type: ignore[attr-defined]
+    state = {
+        "symbol_type": "qr",
+        "payload_type": "vcard",
+        "payload": {
+            "given_name": "Ada",
+            "family_name": "Lovelace",
+            "email": "ada@example.com",
+        },
+        "error_correction": "M",
+        "output_format": "png",
+    }
+    request = json.dumps(state)
+    with TestClient(create_app()) as client:
+        preview = client.post("/api/preview", files={"request": (None, request)})
+        assert preview.status_code == 200
+        with Image.open(BytesIO(preview.content)) as image:
+            decoded = zxingcpp.read_barcode(image)
+        assert decoded is not None
+        assert "VERSION:3.0\r\n" in decoded.text
+        assert "FN:Ada Lovelace\r\n" in decoded.text
+        download = client.post(
+            "/api/download",
+            files={
+                "request": (None, request),
+                "render_token": (None, preview.headers["x-render-token"]),
+            },
+        )
+        micro_state = {**state, "symbol_type": "micro", "error_correction": "auto"}
+        rejected = client.post(
+            "/api/preview", files={"request": (None, json.dumps(micro_state))}
+        )
+
+    assert download.status_code == 200
+    assert "qrcode-vcard.png" in download.headers["content-disposition"]
+    assert rejected.status_code == 422
+    assert rejected.json()["issues"][0]["path"] == "payload_type"
 
 
 def test_download_rejects_changed_preview_state(monkeypatch: object) -> None:

@@ -89,6 +89,67 @@ describe('QR generator interface', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('serializes manual vCard fields and requires Standard QR', async () => {
+    render(App);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    const payloadType = screen.getByRole('combobox', { name: 'QR content type' });
+    await fireEvent.change(payloadType, { target: { value: 'vcard' } });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Given name' }), {
+      target: { value: 'Ada' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Family name' }), {
+      target: { value: 'Lovelace' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: /^Email/ }), {
+      target: { value: 'ada@example.com' },
+    });
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 1000 });
+    const request = (fetch as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit;
+    const body = request.body as FormData;
+    expect(JSON.parse(body.get('request') as string)).toMatchObject({
+      payload_type: 'vcard',
+      payload: {
+        given_name: 'Ada',
+        family_name: 'Lovelace',
+        email: 'ada@example.com',
+      },
+    });
+
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Code format' }), {
+      target: { value: 'micro' },
+    });
+    expect(payloadType).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText('vCards require a Standard QR Code.')).toBeInTheDocument();
+  });
+
+  it('imports a vCard into editable fields without uploading the source file', async () => {
+    render(App);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    await fireEvent.change(screen.getByRole('combobox', { name: 'QR content type' }), {
+      target: { value: 'vcard' },
+    });
+    const file = new File(
+      [
+        'BEGIN:VCARD\r\nVERSION:4.0\r\nFN:Grace Hopper\r\nEMAIL:grace@example.com\r\nNOTE:Private\r\nEND:VCARD\r\n',
+      ],
+      'grace.vcf',
+      { type: 'text/vcard' },
+    );
+    await fireEvent.change(screen.getByLabelText(/^Import contact/), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Given name' })).toHaveValue('Grace Hopper'),
+    );
+    expect(screen.getByRole('textbox', { name: /^Email/ })).toHaveValue('grace@example.com');
+    expect(screen.getByRole('status')).toHaveTextContent('NOTE');
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 1000 });
+    const body = ((fetch as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit)
+      .body as FormData;
+    expect(body.has('vcard')).toBe(false);
+  });
+
   it('shows field validation and does not render incomplete content', async () => {
     render(App);
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));

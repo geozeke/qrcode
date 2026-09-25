@@ -1,4 +1,4 @@
-"""Payload normalization for first-release QR code types."""
+"""Payload normalization for supported QR code content types."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ from qrcode_web.errors import RequestValidationError, ValidationIssue
 
 _DECIMAL_COORDINATE = re.compile(r"-?\d+(?:\.\d+)?")
 _COORDINATE_PRECISION = Decimal("0.000001")
+_VCARD_FIELD_BYTES = 255
+_VCARD_MAX_BYTES = 858
 
 
 def _invalid(path: str, code: str, message: str) -> RequestValidationError:
@@ -234,6 +236,178 @@ def normalize_wifi(payload: dict[str, Any]) -> str:
     return result
 
 
+def _vcard_field(payload: dict[str, Any], name: str) -> str:
+    """Validate and trim one vCard text field.
+
+    Parameters
+    ----------
+    payload : dict[str, Any]
+        Candidate vCard fields.
+    name : str
+        Field name to read.
+
+    Returns
+    -------
+    str
+        Trimmed field value.
+    """
+    value = payload.get(name, "")
+    path = f"payload.{name}"
+    if not isinstance(value, str):
+        raise _invalid(path, "type", "Enter valid contact details.")
+    value = value.strip()
+    if len(value.encode("utf-8")) > _VCARD_FIELD_BYTES:
+        raise _invalid(
+            path,
+            "length",
+            f"Contact fields must be at most {_VCARD_FIELD_BYTES} UTF-8 bytes.",
+        )
+    if any(
+        (ord(character) < 32 and character not in "\r\n") or ord(character) == 127
+        for character in value
+    ):
+        raise _invalid(path, "characters", "Contact fields cannot contain controls.")
+    return value
+
+
+def _escape_vcard(value: str) -> str:
+    """Escape an RFC 2426 text value."""
+    normalized = value.replace("\r\n", "\n").replace("\r", "\n")
+    return (
+        normalized.replace("\\", "\\\\")
+        .replace("\n", "\\n")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+    )
+
+
+def _fold_vcard_line(line: str) -> list[str]:
+    """Fold one content line without splitting a UTF-8 character."""
+    result: list[str] = []
+    current = ""
+    limit = 75
+    for character in line:
+        if len((current + character).encode("utf-8")) > limit:
+            result.append(current)
+            current = f" {character}"
+            limit = 75
+        else:
+            current += character
+    result.append(current)
+    return result
+
+
+def _valid_email(value: str) -> bool:
+    """Return whether a contact email has a safe basic address shape."""
+    if (
+        value.count("@") != 1
+        or any(character.isspace() for character in value)
+        or any(character in "\\,;" for character in value)
+    ):
+        return False
+    local, domain = value.rsplit("@", 1)
+    return bool(
+        local and domain and not local.startswith(".") and not domain.startswith(".")
+    )
+
+
+def normalize_vcard(payload: dict[str, Any]) -> str:
+    """Normalize contact fields into one canonical vCard 3.0 value.
+
+    Parameters
+    ----------
+    payload : dict[str, Any]
+        Supported contact and work-address fields.
+
+    Returns
+    -------
+    str
+        Canonical RFC 2426 vCard text.
+    """
+    field_names = (
+        "given_name",
+        "family_name",
+        "personal_phone",
+        "email",
+        "company",
+        "work_title",
+        "work_phone",
+        "fax",
+        "street",
+        "city",
+        "state",
+        "postal_code",
+        "country",
+        "website_url",
+    )
+    fields = {name: _vcard_field(payload, name) for name in field_names}
+    given_name = fields["given_name"]
+    family_name = fields["family_name"]
+    if not given_name and not family_name:
+        raise _invalid(
+            "payload.given_name", "required", "Enter a given or family name."
+        )
+    if fields["email"] and not _valid_email(fields["email"]):
+        raise _invalid("payload.email", "email", "Enter a valid email address.")
+    if fields["website_url"]:
+        try:
+            fields["website_url"] = normalize_url(fields["website_url"])
+        except RequestValidationError as error:
+            issue = error.issues[0]
+            raise _invalid("payload.website_url", issue.code, issue.message) from error
+
+    display_name = " ".join(value for value in (given_name, family_name) if value)
+    lines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        f"N:{_escape_vcard(family_name)};{_escape_vcard(given_name)};;;",
+        f"FN:{_escape_vcard(display_name)}",
+    ]
+    properties = (
+        ("ORG", "company"),
+        ("TITLE", "work_title"),
+        ("TEL;TYPE=CELL,VOICE", "personal_phone"),
+        ("TEL;TYPE=WORK,VOICE", "work_phone"),
+        ("TEL;TYPE=WORK,FAX", "fax"),
+        ("EMAIL;TYPE=INTERNET", "email"),
+    )
+    lines.extend(
+        f"{property_name}:{_escape_vcard(fields[field_name])}"
+        for property_name, field_name in properties
+        if fields[field_name]
+    )
+    address_names = ("street", "city", "state", "postal_code", "country")
+    if any(fields[name] for name in address_names):
+        address = ";".join(
+            [
+                "",
+                "",
+                _escape_vcard(fields["street"]),
+                _escape_vcard(fields["city"]),
+                _escape_vcard(fields["state"]),
+                _escape_vcard(fields["postal_code"]),
+                _escape_vcard(fields["country"]),
+            ]
+        )
+        lines.append(f"ADR;TYPE=WORK:{address}")
+    if fields["website_url"]:
+        lines.append(f"URL:{fields['website_url']}")
+    lines.append("END:VCARD")
+    result = (
+        "\r\n".join(
+            physical_line for line in lines for physical_line in _fold_vcard_line(line)
+        )
+        + "\r\n"
+    )
+    if len(result.encode("utf-8")) > _VCARD_MAX_BYTES:
+        raise _invalid(
+            "payload",
+            "length",
+            f"Contact details must fit within {_VCARD_MAX_BYTES} UTF-8 bytes.",
+        )
+    return result
+
+
 def normalize_payload(payload_type: str, payload: dict[str, Any]) -> str:
     """Normalize one supported QR payload type.
 
@@ -262,4 +436,6 @@ def normalize_payload(payload_type: str, payload: dict[str, Any]) -> str:
         return normalize_text(payload.get("text"))
     if payload_type == "wifi":
         return normalize_wifi(payload)
+    if payload_type == "vcard":
+        return normalize_vcard(payload)
     raise _invalid("payload_type", "unsupported", "Choose a supported payload type.")
