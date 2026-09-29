@@ -6,6 +6,17 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-09-29
+
+[Compare with 0.3.0](https://github.com/geozeke/qrcode/compare/v0.3.0...v0.3.1)
+
+### Dependencies
+
+- *(deps-dev)* Bump the python-dependencies group with 3 updates (#113) ([714034c](https://github.com/geozeke/qrcode/commit/714034c2544bbb1a1341e9ee6490d6c50c114582))
+- *(deps)* Bump astral-sh/setup-uv from 10.1.0 to 10.2.0 ([df9166c](https://github.com/geozeke/qrcode/commit/df9166c657438362b875fef83c08ece199953aef))
+- *(deps)* Bump github/codeql-action from 4.38.1 to 4.38.2 ([5055afd](https://github.com/geozeke/qrcode/commit/5055afd8d59d935df1d6b0c4e760689028237b28))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 7 updates ([e25f224](https://github.com/geozeke/qrcode/commit/e25f224dea287cfce6c710dcdac39439a6dcee3d))
+
 ## [0.3.0] - 2026-09-25
 
 [Compare with 0.2.6](https://github.com/geozeke/qrcode/compare/v0.2.6...v0.3.0)
