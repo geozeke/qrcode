@@ -6,6 +6,15 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-06
+
+[Compare with 0.3.1](https://github.com/geozeke/qrcode/compare/v0.3.1...v0.3.2)
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group with 4 updates (#120) ([ef7546e](https://github.com/geozeke/qrcode/commit/ef7546e50f2d8d4b9651ec248669127ccffac9ca))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 6 updates ([73b80b7](https://github.com/geozeke/qrcode/commit/73b80b795f6e6ebb9e868bacb451d17ad7d2dce2))
+
 ## [0.3.1] - 2026-09-29
 
 [Compare with 0.3.0](https://github.com/geozeke/qrcode/compare/v0.3.0...v0.3.1)
