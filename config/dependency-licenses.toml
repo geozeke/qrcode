@@ -41,7 +41,7 @@ vitest = "MIT"
 [containers]
 "nginx:1.29-alpine" = "BSD-2-Clause"
 "node:22-alpine" = "MIT"
-"python:3.12-slim" = "PSF-2.0"
+"python:3.14-slim" = "PSF-2.0"
 
 [tools]
 uv = "Apache-2.0 OR MIT"

@@ -7,7 +7,7 @@ RUN npm ci --no-fund
 COPY frontend/ ./
 RUN npm run build
 
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 ARG UV_VERSION=0.12.5
 
@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir "uv==${UV_VERSION}"
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src/ ./src/
 RUN UV_NO_CACHE=1 UV_PYTHON_DOWNLOADS=never \
-    uv sync --locked --no-dev --no-editable --python /usr/local/bin/python3.12
+    uv sync --locked --no-dev --no-editable --python /usr/local/bin/python3.14
 COPY --from=frontend-build /app/frontend/build ./web/
 RUN chown -R qrcode:qrcode /app
 

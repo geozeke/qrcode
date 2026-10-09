@@ -7,7 +7,7 @@ Install all of these tools before running the project setup:
 - Git
 - Bash
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`)
-- Python 3.12
+- Python 3.12 or newer (CI tests Python 3.12 and 3.14)
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 22.13 or newer with npm (Node.js 23 is not supported)
 - [just](https://just.systems/)
@@ -124,7 +124,7 @@ This builds the production image and runs both the application and proxy
 deployment suites against the host Docker Engine. The scripts accept
 either the `docker compose` plugin form or the standalone
 `docker-compose` command. The image installs pinned `uv` tooling and
-syncs its production environment from `uv.lock` with Python 3.12.
+syncs its production environment from `uv.lock` with Python 3.14.
 Individual suites remain available with:
 
 ```console
