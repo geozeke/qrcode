@@ -6,6 +6,14 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-10-09
+
+[Compare with 0.3.3](https://github.com/geozeke/qrcode/compare/v0.3.3...v0.3.4)
+
+### Deployment & Operations
+
+- Add credentials to CI pipeline ([5fceed1](https://github.com/geozeke/qrcode/commit/5fceed19fed4d42205dee1024fcbd18722ea7ce6))
+
 ## [0.3.3] - 2026-10-09
 
 [Compare with 0.3.2](https://github.com/geozeke/qrcode/compare/v0.3.2...v0.3.3)
