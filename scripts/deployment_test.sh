@@ -33,8 +33,8 @@ test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainer
 test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.created"}}' "$image")" = "$created"
 test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.licenses"}}' "$image")" = "MIT"
 case "$(docker run --rm --entrypoint python "$image" --version)" in
-    "Python 3.12."*) ;;
-    *) echo "The production image is not using Python 3.12." >&2; exit 1 ;;
+    "Python 3.14."*) ;;
+    *) echo "The production image is not using Python 3.14." >&2; exit 1 ;;
 esac
 case "$(docker run --rm --entrypoint uv "$image" --version)" in
     "uv 0.12.5 "*) ;;
