@@ -45,6 +45,8 @@ options, previewing the result, and downloading generated codes.
   functions.
 - Run Ruff through `uv` for Python code changes when project tooling is
   available.
+- After Python changes, run `just typecheck`, correct every Pyrefly
+  diagnostic, and rerun it until clean before handoff.
 - Keep detailed user, deployment, and contributor documentation in
   `docs/`. Keep `README.md` intentionally concise and link into the
   documentation site and local Markdown sources.
