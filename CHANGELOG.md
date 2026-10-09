@@ -6,6 +6,18 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-10-09
+
+[Compare with 0.3.2](https://github.com/geozeke/qrcode/compare/v0.3.2...v0.3.3)
+
+### Changed
+
+- Set docker image python to 3.14-slim ([45d3c0c](https://github.com/geozeke/qrcode/commit/45d3c0c5b9cf5a1dd299d9669fa77fbc42cfeb03))
+
+### Deployment & Operations
+
+- Migrate type checker from mypy to pyrefly ([f99ae4c](https://github.com/geozeke/qrcode/commit/f99ae4c826f73fafb2c044116c729e5e20282641))
+
 ## [0.3.2] - 2026-10-06
 
 [Compare with 0.3.1](https://github.com/geozeke/qrcode/compare/v0.3.1...v0.3.2)
