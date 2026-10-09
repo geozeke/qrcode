@@ -50,8 +50,8 @@ security = [
 ]
 dev = [
   "httpx2>=2.10.0,<3",
-  "mypy>=2.3.1,<3",
   "pypdf>=6.16.1,<7",
+  "pyrefly==1.3.0",
   "pytest>=9.1.1,<10",
   "pytest-cov>=7.1.0,<8",
   "ruff>=0.16.3,<1",
@@ -79,7 +79,9 @@ ignore = ["D203", "D213"]
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.mypy]
-python_version = "3.12"
-strict = true
-files = ["src"]
+[tool.pyrefly]
+preset = "strict"
+project-includes = ["src", "scripts"]
+required-version = "==1.3.0"
+search-path = ["src", "."]
+python-version = "3.12"

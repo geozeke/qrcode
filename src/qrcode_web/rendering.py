@@ -118,7 +118,7 @@ def _render_raster(
     logo: PreparedLogo | None,
 ) -> Image.Image:
     """Render QR modules and external border geometry to a PIL image."""
-    quiet_zone = int(code.default_border_size)
+    quiet_zone = code.default_border_size
     matrix = list(code.matrix_iter(scale=1, border=quiet_zone, verbose=True))
     qr_size = len(matrix) * scale
     has_border = visual.border_type != "quiet"
@@ -158,7 +158,7 @@ def _place_raster_logo(
 ) -> None:
     """Composite a sanitized logo over an opaque white module-aligned backing."""
     placement = logo_placement(code)
-    symbol_origin = qr_offset + int(code.default_border_size) * scale
+    symbol_origin = qr_offset + code.default_border_size * scale
     backing_xy = symbol_origin + placement.backing_start * scale
     backing_size = placement.backing_modules * scale
     draw = ImageDraw.Draw(image)
@@ -259,7 +259,7 @@ def _render_svg_geometry(
     """Render classified QR modules and external frame as SVG geometry."""
     pixel_scale = scale
     scale = 1
-    quiet_zone = int(code.default_border_size)
+    quiet_zone = code.default_border_size
     matrix = list(code.matrix_iter(scale=1, border=quiet_zone, verbose=True))
     qr_size = len(matrix) * scale
     has_border = visual.border_type != "quiet"
@@ -326,7 +326,7 @@ def _add_svg_logo(
 ) -> None:
     """Embed a sanitized logo and opaque white backing in an SVG document."""
     placement = logo_placement(code)
-    symbol_origin = qr_offset + int(code.default_border_size) * scale
+    symbol_origin = qr_offset + code.default_border_size * scale
     backing_xy = symbol_origin + placement.backing_start * scale
     backing_size = placement.backing_modules * scale
     logo_size = placement.logo_modules * scale
@@ -462,7 +462,7 @@ def render_pdf(
     page_size = A4 if options.page_size == "a4" else letter
     if options.orientation == "landscape":
         page_size = landscape(page_size)
-    quiet_zone = int(code.default_border_size)
+    quiet_zone = code.default_border_size
     matrix = [list(row) for row in code.matrix_iter(border=quiet_zone, verbose=True)]
     module_count = len(matrix)
     symbol_size = options.symbol_size_mm * mm
@@ -639,7 +639,7 @@ def _draw_pdf_logo(
 ) -> None:
     """Draw an opaque logo backing and sanitized logo in vector PDF layout."""
     placement = logo_placement(code)
-    quiet_zone = int(code.default_border_size)
+    quiet_zone = code.default_border_size
     symbol_x = qr_x + quiet_zone * module_size
     symbol_y = qr_y + quiet_zone * module_size
     backing_x = symbol_x + placement.backing_start * module_size

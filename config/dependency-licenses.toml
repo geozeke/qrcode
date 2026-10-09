@@ -2,7 +2,7 @@
 anyio = "MIT"
 fastapi = "MIT"
 httpx2 = "BSD-3-Clause"
-mypy = "MIT"
+pyrefly = "MIT"
 pillow = "MIT-CMU"
 pip-audit = "Apache-2.0"
 pypdf = "BSD-3-Clause"

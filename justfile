@@ -20,7 +20,7 @@ clean:
     #!/usr/bin/env bash
     echo "Cleaning generated caches, reports, and build outputs"
     rm -rf -- \
-        .mypy_cache .pytest_cache .ruff_cache .uv-cache \
+        .pyrefly_cache .pytest_cache .ruff_cache .uv-cache \
         build coverage dist htmlcov site \
         frontend/.svelte-kit frontend/build frontend/coverage \
         frontend/playwright-report frontend/test-results
@@ -59,7 +59,7 @@ lint:
 
 # Run Python and frontend static type checks
 typecheck:
-    uv run mypy src scripts
+    uv run pyrefly check
     npm --prefix frontend run check
 
 # Run the host backend and frontend test suites
