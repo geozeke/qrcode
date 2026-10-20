@@ -10,7 +10,7 @@ RUN npm run build
 # Pull specific uv versions
 FROM ghcr.io/astral-sh/uv:0.13.4 AS uv
 
-FROM python:3.14-slim AS runtime
+FROM python:3.15-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
