@@ -7,6 +7,7 @@ RUN npm ci --no-fund
 COPY frontend/ ./
 RUN npm run build
 
+# Pull specific uv versions
 FROM ghcr.io/astral-sh/uv:0.13.4 AS uv
 
 FROM python:3.14-slim AS runtime
