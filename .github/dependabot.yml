@@ -37,6 +37,8 @@ updates:
     schedule:
       interval: weekly
     rebase-strategy: auto
+    ignore:
+      - dependency-name: astral-sh/uv
     allow:
       - dependency-type: direct
     commit-message:

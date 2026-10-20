@@ -123,8 +123,9 @@ just deployment-test
 This builds the production image and runs both the application and proxy
 deployment suites against the host Docker Engine. The scripts accept
 either the `docker compose` plugin form or the standalone
-`docker-compose` command. The image installs pinned `uv` tooling and
-syncs its production environment from `uv.lock` with Python 3.14.
+`docker-compose` command. The image copies pinned `uv` tooling from
+Astral's official container image and syncs its production environment from
+`uv.lock` with Python 3.14.
 Individual suites remain available with:
 
 ```console
@@ -258,9 +259,11 @@ repository's Advanced Security settings. Leave automatic Dependabot
 security updates disabled when remediation pull requests should remain
 maintainer-controlled.
 
-Dependabot proposes routine version updates only for direct
-dependencies declared in the uv, npm, Docker, Docker Compose, and GitHub
-Actions manifests. Dependabot Alerts and the scheduled audits continue
+Dependabot proposes routine version updates only for direct dependencies
+declared in the uv, npm, Docker, Docker Compose, and GitHub Actions manifests.
+The pinned `ghcr.io/astral-sh/uv` image is the exception: it is updated
+manually with the command below so every local CI and image reference remains
+synchronized. Dependabot Alerts and the scheduled audits continue
 to cover the complete resolved dependency graph, including transitive
 dependencies. Review alerts in the repository's Security view and use
 the failed workflow's summary and logs for the corresponding audit
@@ -270,6 +273,21 @@ when admitting the release requires a range change. Minor and patch uv
 and npm updates are grouped by ecosystem, while major updates receive
 individual pull requests. Docker, Docker Compose, and GitHub Actions
 updates also remain individual.
+
+## Updating uv
+
+Update the pinned uv release periodically with one command:
+
+```console
+just bump-uv 0.13.4
+```
+
+The command validates that the requested semantic version is a published
+Astral uv release before updating the Docker image tag, every `setup-uv`
+workflow input, the deployment assertion, and the container license inventory
+together. It refuses to change files if release verification fails or an
+expected reference is missing or ambiguous. Run `just check` and
+`just deployment-test` before committing the update.
 
 Treat Dependabot pull requests as the routine direct-dependency update
 workflow. Review the release notes and the manifest and lockfile diff,
