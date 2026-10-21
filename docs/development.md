@@ -261,9 +261,10 @@ maintainer-controlled.
 
 Dependabot proposes routine version updates only for direct dependencies
 declared in the uv, npm, Docker, Docker Compose, and GitHub Actions manifests.
-The pinned `ghcr.io/astral-sh/uv` image is the exception: it is updated
-manually with the command below so every local CI and image reference remains
-synchronized. Dependabot Alerts and the scheduled audits continue
+The pinned `ghcr.io/astral-sh/uv` and `python` images are exceptions: uv is
+updated manually with the command below so every local CI and image reference
+remains synchronized, while Python stays pinned at 3.14 pending a coordinated
+runtime upgrade. Dependabot Alerts and the scheduled audits continue
 to cover the complete resolved dependency graph, including transitive
 dependencies. Review alerts in the repository's Security view and use
 the failed workflow's summary and logs for the corresponding audit
