@@ -39,6 +39,7 @@ updates:
     rebase-strategy: auto
     ignore:
       - dependency-name: astral-sh/uv
+      - dependency-name: python
     allow:
       - dependency-type: direct
     commit-message:
