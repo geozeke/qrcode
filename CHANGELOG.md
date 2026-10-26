@@ -6,6 +6,23 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-10-26
+
+[Compare with 0.3.6](https://github.com/geozeke/qrcode/compare/v0.3.6...v0.3.7)
+
+### Deployment & Operations
+
+- Add version bump for uv tooling ([ca3a2ae](https://github.com/geozeke/qrcode/commit/ca3a2ae1a7c484d865bf48335e71fedc7170bfdd))
+- Migrate from hatchling to uv-build ([51af70e](https://github.com/geozeke/qrcode/commit/51af70e171892b53b17b7bf99fdc97170d017597))
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group across 1 directory with 2 updates (#144) ([9a9dcec](https://github.com/geozeke/qrcode/commit/9a9dcecdd00872b74d647c1d571cd086220b19d0))
+- *(deps)* Bump the python-dependencies group with 5 updates (#151) ([6cc5d0c](https://github.com/geozeke/qrcode/commit/6cc5d0c0db7461db8cc583015c1c4c0ae1704605))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 2 updates ([ee7465f](https://github.com/geozeke/qrcode/commit/ee7465fba2cc5647d53132f73c9f6c0deded68d5))
+- *(deps)* Bump github/codeql-action from 4.39.0 to 4.39.1 ([9c7d334](https://github.com/geozeke/qrcode/commit/9c7d3348c762cdcc73d03972ecebe9d145219ebd))
+- *(deps)* Bump astral-sh/setup-uv from 10.3.0 to 10.3.2 ([f0575df](https://github.com/geozeke/qrcode/commit/f0575dffad13435475b3d3c6fcb1200d760d571f))
+
 ## [0.3.6] - 2026-10-20
 
 [Compare with 0.3.5](https://github.com/geozeke/qrcode/compare/v0.3.5...v0.3.6)
