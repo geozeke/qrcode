@@ -75,10 +75,6 @@ test-e2e:
 licenses:
     uv run python scripts/check_dependency_licenses.py
 
-# Verify that every uv toolchain reference uses the same version
-uv-version:
-    uv run python -m scripts.check_uv_version
-
 # Serve the Zensical documentation site locally
 docs-serve:
     uv run --group docs zensical serve
@@ -106,7 +102,7 @@ deployment-test:
     bash scripts/deployment_test.sh
 
 # Run the complete host quality-check suite
-check: lint typecheck test docs-build licenses uv-version
+check: lint typecheck test docs-build licenses
 
 # Preview user-facing changes since the latest release
 changelog:
@@ -120,10 +116,6 @@ changelog:
 # Update project files to the specified release version
 bump version:
     uv run python -m scripts.bump_version {{ version }}
-
-# Update every pinned uv toolchain reference to the specified release
-bump-uv version:
-    uv run python -m scripts.bump_uv {{ version }}
 
 # Create and push the current version's release tag
 tag-release:
