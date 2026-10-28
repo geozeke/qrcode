@@ -260,35 +260,35 @@ security updates disabled when remediation pull requests should remain
 maintainer-controlled.
 
 Dependabot proposes routine version updates only for direct dependencies
-declared in the uv, npm, Docker, Docker Compose, and GitHub Actions manifests.
-The pinned `ghcr.io/astral-sh/uv` and `python` images are exceptions: uv is
-updated manually with the command below so every local CI and image reference
-remains synchronized, while Python stays pinned at 3.14 pending a coordinated
-runtime upgrade. Dependabot Alerts and the scheduled audits continue
-to cover the complete resolved dependency graph, including transitive
-dependencies. Review alerts in the repository's Security view and use
-the failed workflow's summary and logs for the corresponding audit
-details. For uv and npm, Dependabot leaves a declared range unchanged
-when it already permits the target release. It edits the manifest only
-when admitting the release requires a range change. Minor and patch uv
-and npm updates are grouped by ecosystem, while major updates receive
-individual pull requests. Docker, Docker Compose, and GitHub Actions
-updates also remain individual.
+declared in the uv, npm, Docker, Docker Compose, and GitHub Actions
+manifests. The pinned `ghcr.io/astral-sh/uv` and `python` images are
+exceptions and remain deliberate manual updates. Dependabot Alerts and
+the scheduled audits continue to cover the complete resolved dependency
+graph, including transitive dependencies. Review alerts in the
+repository's Security view and use the failed workflow's summary and
+logs for the corresponding audit details. For uv and npm, Dependabot
+leaves a declared range unchanged when it already permits the target
+release. It edits the manifest only when admitting the release requires
+a range change. Minor and patch uv and npm updates are grouped by
+ecosystem, while major updates receive individual pull requests. Docker,
+Docker Compose, and GitHub Actions updates also remain individual.
 
 ## Updating uv
 
-Update the pinned uv release periodically with one command:
+GitHub Actions installs the highest available uv `0.13.x` release at the
+time each job starts. Every `astral-sh/setup-uv` step uses the shared
+`>=0.13.4,<0.14` range, so compatible patch releases reach CI without a
+repository change. Raising the minimum version or adopting a new minor
+release requires updating every workflow input together and running
+`just check`.
 
-```console
-just bump-uv 0.13.4
-```
-
-The command validates that the requested semantic version is a published
-Astral uv release before updating the Docker image tag, every `setup-uv`
-workflow input, the deployment assertion, and the container license inventory
-together. It refuses to change files if release verification fails or an
-expected reference is missing or ambiguous. Run `just check` and
-`just deployment-test` before committing the update.
+The production image remains pinned to a specific uv release for
+reproducible builds. Update the `Dockerfile` image tag, the assertion in
+`scripts/deployment_test.sh`, and the container entry in
+`config/dependency-licenses.toml` together after reviewing the release.
+Run `just check` and `just deployment-test` before committing a
+production uv update. The production pin is intentionally independent
+of the range used by CI.
 
 Treat Dependabot pull requests as the routine direct-dependency update
 workflow. Review the release notes and the manifest and lockfile diff,

@@ -39,7 +39,7 @@ vite = "MIT"
 vitest = "MIT"
 
 [containers]
-"ghcr.io/astral-sh/uv:0.13.4" = "Apache-2.0 OR MIT"
+"ghcr.io/astral-sh/uv:0.13.6" = "Apache-2.0 OR MIT"
 "nginx:1.29-alpine" = "BSD-2-Clause"
 "node:22-alpine" = "MIT"
 "python:3.14-slim" = "PSF-2.0"
