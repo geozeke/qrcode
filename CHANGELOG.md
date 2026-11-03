@@ -6,6 +6,21 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-11-03
+
+[Compare with 0.3.7](https://github.com/geozeke/qrcode/compare/v0.3.7...v0.3.8)
+
+### Deployment & Operations
+
+- Allow any 0.13.x uv version for CI tooling ([32ae320](https://github.com/geozeke/qrcode/commit/32ae3201abe50c8a577ea4d31c47ef9f932afd46))
+- Bump uv Docker image to 0.13.6 ([2311242](https://github.com/geozeke/qrcode/commit/2311242430a9be6e823af1ad1e6df7d45587ad3f))
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group with 5 updates (#158) ([0b51222](https://github.com/geozeke/qrcode/commit/0b5122249e9d6f4282a4761b54abde960e00c6b2))
+- *(deps)* Bump astral-sh/setup-uv from 10.3.2 to 10.3.3 ([6cf8ef8](https://github.com/geozeke/qrcode/commit/6cf8ef89167281a89ad75b8e445298d7550d1ba5))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 4 updates ([167699a](https://github.com/geozeke/qrcode/commit/167699aabcc1d6acc4ca36c94f9ec1bc7dc3fb09))
+
 ## [0.3.7] - 2026-10-26
 
 [Compare with 0.3.6](https://github.com/geozeke/qrcode/compare/v0.3.6...v0.3.7)
