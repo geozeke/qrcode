@@ -6,6 +6,18 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.9] - 2026-11-09
+
+[Compare with 0.3.8](https://github.com/geozeke/qrcode/compare/v0.3.8...v0.3.9)
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group with 6 updates (#164) ([b9e92d1](https://github.com/geozeke/qrcode/commit/b9e92d155035d677530c479a808fcd1dc41690b9))
+- *(deps)* Bump github/codeql-action from 4.39.1 to 4.39.3 ([b185c60](https://github.com/geozeke/qrcode/commit/b185c60d1341a180ce72bf5479542c3bbd2a51f6))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 6 updates ([caa77b3](https://github.com/geozeke/qrcode/commit/caa77b3728f644529e8247e23e7f5bffcb28edc9))
+- *(deps-dev)* Bump jsdom from 30.1.3 to 31.0.0 in /frontend ([f10afe3](https://github.com/geozeke/qrcode/commit/f10afe34de43b41d4b0dc6469466398aa104c13b))
+- *(deps-dev)* Bump pypdf from 6.21.4 to 7.0.0 ([51d4894](https://github.com/geozeke/qrcode/commit/51d4894d5aa50c0461fbb40f6b9681d4bd0c1609))
+
 ## [0.3.8] - 2026-11-03
 
 [Compare with 0.3.7](https://github.com/geozeke/qrcode/compare/v0.3.7...v0.3.8)
