@@ -6,6 +6,22 @@ format is based on
 project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.12] - 2026-11-24
+
+[Compare with 0.3.10](https://github.com/geozeke/qrcode/compare/v0.3.10...v0.3.12)
+
+### Deployment & Operations
+
+- Fix broken CI pipelines (#178) ([2530d59](https://github.com/geozeke/qrcode/commit/2530d59cb8d5ee763f30339d960746cc12d2d1af))
+
+### Dependencies
+
+- *(deps)* Bump the python-dependencies group with 7 updates (#176) ([537a870](https://github.com/geozeke/qrcode/commit/537a87061290755b110bb06d7b1811b2a2ceb412))
+- *(deps)* Bump github/codeql-action from 4.39.3 to 4.39.4 ([7613b0a](https://github.com/geozeke/qrcode/commit/7613b0a9ac44ef8417c28b208926d8cf280314b1))
+- *(deps)* Bump astral-sh/setup-uv from 10.3.3 to 10.4.0 ([964c60f](https://github.com/geozeke/qrcode/commit/964c60f1b525e61176040a29901375eb3de99bc1))
+- *(deps-dev)* Bump the frontend-dependencies group across 1 directory with 4 updates ([ab973d8](https://github.com/geozeke/qrcode/commit/ab973d883202a501848a0532cca5da206ed59dac))
+- *(deps-dev)* Bump @testing-library/jest-dom in /frontend ([681dfcb](https://github.com/geozeke/qrcode/commit/681dfcb6cb4cfb5b64fac0c9f307fa561b291a6c))
+
 ## [0.3.11] - 2026-11-24
 
 [Compare with 0.3.10](https://github.com/geozeke/qrcode/compare/v0.3.10...v0.3.11)
