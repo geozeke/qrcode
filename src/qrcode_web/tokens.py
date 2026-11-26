@@ -71,7 +71,7 @@ def verify_token(token: str, fingerprint: str) -> bool:
         secret = os.environ["QR_RENDER_TOKEN_SECRET"].encode("utf-8")
         expected = hmac.new(secret, body, hashlib.sha256).digest()
         payload = json.loads(body)
-    except (ValueError, json.JSONDecodeError, KeyError):
+    except (ValueError, KeyError):
         return False
     return bool(
         hmac.compare_digest(signature, expected)
